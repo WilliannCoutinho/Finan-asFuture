@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ControlFine</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <style>
+        /* Variáveis Padrão (Modo Escuro) */
+        :root {
+            --bg-color: #0b0c10;
+            --primary: #6a11cb;
+            --secondary: #2575fc;
+            --warning: #ffa502;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #a0a5b1;
+            --danger: #ff4757;
+            --success: #2ed573;
+            --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --modal-bg: rgba(11, 12, 16, 0.95);
+        }
+
+        /* Variáveis Modo Claro */
+        html[data-theme="light"] {
+            --bg-color: #f4f7fb;
+            --primary: #5112a8;
+            --secondary: #1a5cce;
+            --warning: #e67e22;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --danger: #e11d48;
+            --success: #16a34a;
+            --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            --modal-bg: rgba(244, 247, 251, 0.95);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(106, 17, 203, 0.1), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(37, 117, 252, 0.1), transparent 25%);
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        /* ----- TELA DE LOGIN ----- */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 1000; padding: 20px;
+            background-color: #0b0c10;
+            background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover; background-position: center;
+        }
+
+        #login-screen::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(11, 12, 16, 0.85) 0%, rgba(37, 117, 252, 0.3) 100%);
+            backdrop-filter: blur(6px); z-index: 0;
+        }
+
+        .login-card {
+            width: 100%; max-width: 380px; padding: 40px 30px; text-align: center;
+            position: relative; z-index: 1;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            animation: slideUpFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-card h1 {
+            background: linear-gradient(to right, #a18cd1, #fbc2eb);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 5px; font-size: 2.5rem; letter-spacing: 1px; font-weight: 800;
+        }
+
+        .login-card p { color: #d1d5db; margin-bottom: 35px; font-size: 0.95rem; }
+
+        .input-icon-wrapper { position: relative; width: 100%; margin-bottom: 20px; }
+        .input-icon-wrapper svg {
+            position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+            width: 20px; height: 20px; fill: rgba(255,255,255,0.5); transition: fill 0.3s ease;
+        }
+        .input-icon-wrapper input {
+            width: 100%; padding: 16px 16px 16px 48px;
+            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px; color: white; font-size: 1rem; outline: none; transition: all 0.3s ease;
+        }
+        .input-icon-wrapper input:focus { border-color: #2575fc; box-shadow: 0 0 15px rgba(37, 117, 252, 0.4); }
+        .input-icon-wrapper input:focus + svg, .input-icon-wrapper input:not(:placeholder-shown) + svg { fill: #2575fc; }
+
+        .btn-gradient {
+            width: 100%; padding: 16px; margin-top: 10px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border: none; border-radius: 14px; color: white;
+            font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            box-shadow: 0 8px 20px rgba(106, 17, 203, 0.3); transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-gradient:active { transform: scale(0.97); }
+
+        /* ----- APP PRINCIPAL ----- */
+        #app-screen { display: none; padding: 20px 20px 100px 20px; max-width: 600px; margin: 0 auto; }
+
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-top: 10px; }
+        .profile-header { display: flex; align-items: center; gap: 12px; }
+        .profile-img-mini { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+        .greeting { font-size: 1.2rem; font-weight: 500; color: var(--text-muted); }
+        .greeting span { color: var(--text-main); font-weight: bold; }
+
+        /* ----- DASHBOARD INTELIGENTE UI ----- */
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .dash-card { padding: 18px 15px; border-radius: 16px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .dash-card.full { grid-column: span 2; padding: 25px 20px; background: linear-gradient(135deg, rgba(106,17,203,0.15) 0%, rgba(37,117,252,0.15) 100%); }
+        .dash-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .dash-value { font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+        .dash-card.full .dash-value { font-size: 2.5rem; background: linear-gradient(to right, #a18cd1, #fbc2eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .trend { font-size: 0.7rem; font-weight: 600; padding: 3px 6px; border-radius: 6px; display: inline-flex; align-items: center; width: fit-content; gap: 4px;}
+        .trend.up { background: rgba(46, 213, 115, 0.15); color: var(--success); }
+        .trend.down { background: rgba(255, 71, 87, 0.15); color: var(--danger); }
+        .trend.neutral { background: rgba(128, 128, 128, 0.15); color: var(--text-muted); }
+
+        .cat-bar-wrap { margin-bottom: 12px; }
+        .cat-bar-head { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-main); font-weight: 500;}
+        .cat-bar-bg { width: 100%; height: 8px; background: rgba(128, 128, 128, 0.15); border-radius: 4px; overflow: hidden; }
+        .cat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+        
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 25px 0 15px 0; }
+        .section-title { font-size: 1.1rem; color: var(--text-main); margin: 0;}
+        .btn-link { background: none; border: none; color: var(--secondary); font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+
+        .input-glass { width: 100%; padding: 15px; background: rgba(128, 128, 128, 0.05); border: 1px solid var(--glass-border); border-radius: 12px; color: var(--text-main); font-size: 1rem; outline: none; margin-bottom: 20px; transition: 0.3s; }
+        .input-glass:focus { border-color: var(--secondary); }
+        
+        .form-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .form-group { flex: 1; display: flex; flex-direction: column; text-align: left; }
+        .form-group label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px; }
+
+        select.input-glass { appearance: none; background-color: rgba(128, 128, 128, 0.05); }
+        select.input-glass option { background-color: var(--bg-color); color: var(--text-main); }
+
+        .item-list { list-style: none; }
+        .item-card { padding: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .item-info h4 { font-size: 1rem; margin-bottom: 4px; color: var(--text-main); display: flex; align-items: center; }
+        .item-info p { font-size: 0.8rem; color: var(--text-muted); }
+        .item-value-area { text-align: right; }
+        .item-value { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; color: var(--text-main); }
+        .item-value.red { color: var(--danger); }
+        .item-value.green { color: var(--success); }
+        .item-value.secondary { color: var(--secondary); }
+        
+        .btn-small { background: rgba(128, 128, 128, 0.1); border: none; color: var(--text-main); padding: 5px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; transition: 0.2s;}
+        .btn-small.pay { background: rgba(46, 213, 115, 0.15); color: var(--success); }
+        .btn-small.del { background: rgba(255, 71, 87, 0.15); color: var(--danger); margin-left: 5px;}
+        .btn-small.outline { background: transparent; border: 1px solid var(--glass-border); }
+
+        .btn-floating {
+            position: fixed; bottom: 100px; right: 25px; width: 60px; height: 60px;
+            border-radius: 50%; background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border: none; color: white; font-size: 1.8rem; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: 0 4px 20px rgba(37, 117, 252, 0.4); z-index: 90; transition: transform 0.2s;
+        }
+        .btn-floating:active { transform: scale(0.92); }
+
+        .bottom-nav {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 95%; max-width: 550px; display: flex; justify-content: space-around;
+            align-items: center; padding: 10px 5px; border-radius: 30px; z-index: 100;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); cursor: pointer; transition: 0.3s; padding: 8px 2px; flex: 1; }
+        .nav-item svg { width: 22px; height: 22px; fill: currentColor; margin-bottom: 4px; transition: 0.3s; }
+        .nav-item span { font-size: 0.65rem; font-weight: 500; text-align: center;}
+        .nav-item.active { color: var(--secondary); }
+        .nav-item.active svg { transform: translateY(-2px); filter: drop-shadow(0 2px 5px rgba(37, 117, 252, 0.4)); }
+
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .config-avatar-wrapper { position: relative; width: 120px; height: 120px; margin: 0 auto 30px; cursor: pointer; }
+        .config-avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); box-shadow: 0 4px 15px rgba(106, 17, 203, 0.3); }
+        .edit-badge { position: absolute; bottom: 0; right: 0; background: var(--secondary); padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg-color); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-bg); backdrop-filter: blur(10px); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: background 0.4s; }
+        #crop-modal .crop-container { width: 100%; max-width: 400px; height: 50vh; background: #000; margin-bottom: 20px; border-radius: 12px; overflow: hidden; }
+
+        .investimentos-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; list-style: none; padding: 0; margin-bottom: 30px; }
+        .inv-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; aspect-ratio: 1; box-shadow: var(--card-shadow); }
+        .inv-card:active { transform: scale(0.96); }
+        .inv-card .icone { font-size: 2.2rem; margin-bottom: 10px; }
+        .inv-card .nome { font-weight: 600; margin-bottom: 4px; font-size: 0.95rem; color: var(--text-main); }
+        .inv-card .tipo { font-size: 0.75rem; color: var(--secondary); margin-bottom: 8px; }
+        .inv-card .valor { color: var(--success); font-weight: bold; font-size: 1.15rem; margin-bottom: 5px;}
+        
+        .inv-progresso-wrap { width: 90%; margin-top: 5px; }
+        .progress-bar-bg { width: 100%; height: 6px; background: rgba(128,128,128,0.2); border-radius: 3px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 3px; transition: width 0.4s ease; }
+        .inv-card .meta-texto { font-size: 0.7rem; color: var(--text-muted); margin-top: 3px; }
+        .inv-card .rendimento-texto { font-size: 0.7rem; color: var(--success); font-weight: 500;}
+
+        .hist-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--glass-border); }
+        .hist-item:last-child { border-bottom: none; }
+        .hist-item-valor { font-weight: bold; }
+        .hist-item-data { font-size: 0.75rem; color: var(--text-muted); }
+        .hist-item-desc { font-size: 0.8rem; color: var(--text-main); margin-bottom: 2px; }
+        .det-resumo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; text-align: left; }
+        .det-resumo-box { background: rgba(128,128,128,0.1); padding: 12px; border-radius: 10px; border: 1px solid var(--glass-border); }
+        .det-resumo-box p { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+        .det-resumo-box h4 { font-size: 1rem; color: var(--text-main); }
+
+        /* ----- ESTILOS DO CALENDÁRIO ----- */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; margin-top: 10px; }
+        .cal-header { font-size: 0.7rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+        .cal-day { padding: 10px 2px; background: rgba(128,128,128,0.05); border-radius: 8px; cursor: pointer; transition: 0.2s; position: relative; min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+        .cal-day:active { transform: scale(0.9); }
+        .cal-day.active { border: 1px solid var(--secondary); background: rgba(37, 117, 252, 0.1); }
+        .cal-day.empty { background: transparent; cursor: default; }
+        .cal-day .day-num { font-size: 0.9rem; font-weight: 500; margin-bottom: 2px; }
+        .cal-day.today .day-num { color: var(--secondary); font-weight: 900; }
+        .cal-dots { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; max-width: 100%; padding: 0 4px; }
+        .cal-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .cal-dot.green { background: var(--success); }
+        .cal-dot.red { background: var(--danger); }
+        .cal-dot.blue { background: var(--secondary); }
+        .cal-dot.warning { background: var(--warning); }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen">
+        <div class="login-card">
+            <h1 data-i18n="appName">ControlFine</h1>
+            <p id="login-msg" data-i18n="slogan">Seu controle financeiro pessoal</p>
+            
+            <div class="input-icon-wrapper" id="user-wrapper">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <input type="text" id="username-input" data-i18n-placeholder="usernamePlaceholder" placeholder="Como quer ser chamado?">
+            </div>
+
+            <div class="input-icon-wrapper">
+                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                <input type="password" id="password-input" data-i18n-placeholder="passwordPlaceholder" placeholder="Digite sua senha">
+            </div>
+
+            <button class="btn-gradient" id="login-btn" onclick="processarLogin()" data-i18n="createAccountBtn">Criar Conta e Entrar</button>
+        </div>
+    </div>
+
+    <!-- APP PRINCIPAL -->
+    <div id="app-screen">
+        <header>
+            <div class="profile-header">
+                <img id="header-avatar" src="" class="profile-img-mini" alt="Perfil">
+                <div class="greeting"><span data-i18n="greeting">Olá</span>, <span id="display-name"></span> 👋 <span id="display-mes" style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal; margin-left: 5px;"></span></div>
+            </div>
+            <button class="btn-small outline" onclick="bloquearApp()" data-i18n="lock">Bloquear</button>
+        </header>
+
+        <!-- CABEÇALHO COMPACTO (Aparece fora da aba Início) -->
+        <div id="painel-saldo-min" style="display: none; margin-bottom: 20px;">
+            <div class="glass" style="padding: 15px; text-align: center; border-radius: 12px;">
+                <p style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;" data-i18n="availBalance">Saldo Disponível</p>
+                <h3 style="color: var(--text-main);">R$ <span id="header-saldo-min">0.00</span></h3>
+            </div>
+        </div>
+
+        <!-- ABA INÍCIO (DASHBOARD INTELIGENTE) -->
+        <section id="tab-gastos" class="tab-content active">
+            
+            <div class="dash-grid" id="dash-cards-container">
+                <div class="dash-card full glass">
+                    <div class="dash-title" data-i18n="netWorth">Patrimônio Total</div>
+                    <div class="dash-value">R$ <span id="dash-patrimonio">0.00</span></div>
+                    <div id="dash-patrimonio-trend"></div>
+                </div>
+                <div class="dash-card glass">
+                    <div class="dash-title" data-i18n="availBalance">Saldo Atual</div>
+                    <div class="dash-value small">R$ <span id="dash-saldo">0.00</span></div>
+                    <div id="dash-saldo-trend"></div>
+                </div>
+                <div class="dash-card glass">
+                    <div class="dash-title" data-i18n="investments">Investimentos</div>
+                    <div class="dash-value small">R$ <span id="dash-investimentos">0.00</span></div>
+                    <div id="dash-investimentos-trend"></div>
+                </div>
+                <div class="dash-card glass" style="border-left: 4px solid var(--success);">
+                    <div class="dash-title" data-i18n="incomes">Entradas Mês</div>
+                    <div class="dash-value small" style="color: var(--success);">R$ <span id="dash-ganhos">0.00</span></div>
+                    <div id="dash-ganhos-trend"></div>
+                </div>
+                <div class="dash-card glass" style="border-left: 4px solid var(--danger);">
+                    <div class="dash-title" data-i18n="expenses">Gastos Mês</div>
+                    <div class="dash-value small" style="color: var(--danger);">R$ <span id="dash-gastos">0.00</span></div>
+                    <div id="dash-gastos-trend"></div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+                <button class="btn-gradient" onclick="abrirModalGanhos()" style="background: rgba(46, 213, 115, 0.15); color: var(--success); font-weight: bold; border: 1px solid rgba(46, 213, 115, 0.25); flex: 1;" data-i18n="addIncome">+ Adicionar Ganhos</button>
+            </div>
+
+            <!-- Ganhos Container -->
+            <div id="lista-ganhos-container" style="margin-bottom: 20px; display: none;">
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;" data-i18n="currentMonthIncomes">Gerenciar Ganhos do Mês</div>
+                <ul class="item-list" id="lista-ganhos"></ul>
+            </div>
+
+            <!-- Categorias -->
+            <div class="glass" style="padding: 20px; margin-bottom: 20px;" id="dash-categorias-container">
+                <div class="section-title" style="margin-bottom: 15px;" data-i18n="categoryExpenses">Gastos por Categoria</div>
+                <div id="dash-categorias-list"></div>
+            </div>
+
+            <!-- Orçamentos -->
+            <div class="glass" style="padding: 20px; margin-bottom: 20px;">
+                <div class="section-header" style="margin-top: 0; margin-bottom: 15px;">
+                    <h3 class="section-title" data-i18n="monthlyBudget">Orçamento Mensal</h3>
+                    <button class="btn-link" onclick="abrirModalOrcamentos()" data-i18n="manage">Gerenciar</button>
+                </div>
+                <div id="dash-orcamentos-list">
+                    <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 10px;" data-i18n="noBudget">Nenhum orçamento definido.</p>
+                </div>
+            </div>
+
+            <!-- Metas -->
+            <div class="glass" style="padding: 20px; margin-bottom: 20px; display: none;" id="dash-metas-container">
+                <div class="section-title" style="margin-bottom: 15px;" data-i18n="goalsSummary">Resumo de Metas</div>
+                <div id="dash-metas-list"></div>
+            </div>
+
+            <!-- Últimas Movimentações -->
+            <div class="section-header">
+                <h3 class="section-title" data-i18n="latestTransactions">Últimas Movimentações</h3>
+                <button class="btn-link" onclick="alternarListaCompletaGastos()" id="btn-toggle-history" data-i18n="seeAll">Ver Todas</button>
+            </div>
+            
+            <ul class="item-list" id="lista-recentes" style="margin-bottom: 10px;"></ul>
+            
+            <!-- HISTÓRICO COMPLETO -->
+            <div id="lista-gastos-wrapper" style="display: none; margin-top: 20px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="font-size: 0.95rem; color: var(--text-main); text-transform: uppercase;" data-i18n="fullHistory">Histórico e Filtros</h4>
+                    <button class="btn-small outline" onclick="toggleFiltrosAvancados()" style="display: flex; gap: 5px; align-items: center;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+                        <span data-i18n="filtersBtn">Filtros</span> <span id="filtros-badge" style="display:none; background: var(--secondary); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; margin-left: 4px;">0</span>
+                    </button>
+                </div>
+        
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <input type="text" id="filtro-busca" class="input-glass" data-i18n-placeholder="searchPlaceholder" placeholder="Pesquisar por nome..." oninput="aplicarFiltros()">
+                </div>
+        
+                <div id="filtros-avancados-container" class="glass" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 12px; background: rgba(255,255,255,0.02);">
+                    <div class="form-row">
+                        <div class="form-group"><label data-i18n="month">Mês</label><select id="filtro-mes" class="input-glass" onchange="aplicarFiltros()" style="padding: 10px;"><option value="todos" data-i18n="allMonths">Todos</option><option value="0" data-i18n="jan">Janeiro</option><option value="1" data-i18n="feb">Fevereiro</option><option value="2" data-i18n="mar">Março</option><option value="3" data-i18n="apr">Abril</option><option value="4" data-i18n="may">Maio</option><option value="5" data-i18n="jun">Junho</option><option value="6" data-i18n="jul">Julho</option><option value="7" data-i18n="aug">Agosto</option><option value="8" data-i18n="sep">Setembro</option><option value="9" data-i18n="oct">Outubro</option><option value="10" data-i18n="nov">Novembro</option><option value="11" data-i18n="dec">Dezembro</option></select></div>
+                        <div class="form-group"><label data-i18n="year">Ano</label><select id="filtro-ano" class="input-glass" onchange="aplicarFiltros()" style="padding: 10px;"><option value="todos" data-i18n="allYears">Todos</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label data-i18n="type">Tipo</label><select id="filtro-tipo" class="input-glass" onchange="aplicarFiltros()" style="padding: 10px;"><option value="todos" data-i18n="allTypes">Todos</option><option value="entrada" data-i18n="typeEntry">Entradas</option><option value="gasto" data-i18n="typeExpense">Gastos</option><option value="investimento" data-i18n="typeInvestment">Investimentos</option></select></div>
+                        <div class="form-group"><label data-i18n="category">Categoria</label><select id="filtro-categoria" class="input-glass" onchange="aplicarFiltros()" style="padding: 10px;"><option value="todos" data-i18n="allCategories">Todas</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label data-i18n="method">Forma de Pag.</label><select id="filtro-metodo" class="input-glass" onchange="aplicarFiltros()" style="padding: 10px;"><option value="todos" data-i18n="allMethods">Todas</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label data-i18n="minValue">Valor Mín. (R$)</label><input type="number" id="filtro-val-min" class="input-glass" step="0.01" style="padding: 10px;" oninput="aplicarFiltros()"></div>
+                        <div class="form-group"><label data-i18n="maxValue">Valor Máx. (R$)</label><input type="number" id="filtro-val-max" class="input-glass" step="0.01" style="padding: 10px;" oninput="aplicarFiltros()"></div>
+                    </div>
+                    <button class="btn-gradient" style="background: transparent; border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.9rem; padding: 10px;" onclick="limparFiltros()" data-i18n="clearFilters">Limpar Filtros</button>
+                </div>
+        
+                <div id="filtros-resumo" style="margin-bottom: 15px; font-size: 0.8rem; color: var(--text-muted); display: none;"></div>
+                <ul class="item-list" id="lista-historico-filtrado"></ul>
+            </div>
+            <button class="btn-floating" id="btn-floating-gasto" onclick="abrirModalGasto()">+</button>
+        </section>
+
+        <!-- ABA CALENDÁRIO (NOVA FUNCIONALIDADE 1) -->
+        <section id="tab-calendario" class="tab-content">
+            <div class="glass" style="padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <button class="btn-small outline" onclick="mudarMesCalendario(-1)" style="font-weight: bold; font-size: 1rem; width: 40px; height: 35px;">&lt;</button>
+                    <h3 id="cal-mes-ano" style="margin:0; text-transform: capitalize; color: var(--text-main); font-size: 1.15rem;">Mes Ano</h3>
+                    <button class="btn-small outline" onclick="mudarMesCalendario(1)" style="font-weight: bold; font-size: 1rem; width: 40px; height: 35px;">&gt;</button>
+                </div>
+                
+                <!-- Resumo Projetado do Calendário -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                    <div class="det-resumo-box" style="border-color: rgba(46, 213, 115, 0.3);">
+                        <p data-i18n="expectedIncomes">Entradas previstas</p>
+                        <h4 style="color: var(--success);" id="cal-resumo-entradas">R$ 0.00</h4>
+                    </div>
+                    <div class="det-resumo-box" style="border-color: rgba(255, 71, 87, 0.3);">
+                        <p data-i18n="expectedExpenses">Gastos previstos</p>
+                        <h4 style="color: var(--danger);" id="cal-resumo-saidas">R$ 0.00</h4>
+                    </div>
+                    <div class="det-resumo-box" style="grid-column: span 2; text-align: center;">
+                        <p data-i18n="projectedBalance">Saldo previsto (Final do Mês)</p>
+                        <h4 id="cal-resumo-saldo" style="font-size: 1.2rem;">R$ 0.00</h4>
+                    </div>
+                </div>
+
+                <!-- Grid Visual -->
+                <div class="calendar-grid">
+                    <div class="cal-header">Dom</div><div class="cal-header">Seg</div><div class="cal-header">Ter</div>
+                    <div class="cal-header">Qua</div><div class="cal-header">Qui</div><div class="cal-header">Sex</div><div class="cal-header">Sáb</div>
+                </div>
+                <div class="calendar-grid" id="calendar-days-container" style="margin-top: 0;"></div>
+            </div>
+            
+            <h3 class="section-title" id="cal-dia-selecionado-titulo" style="margin-bottom: 15px;" data-i18n="upcomingEvents">Próximos Eventos</h3>
+            <ul class="item-list" id="lista-eventos-calendario" style="margin-bottom: 30px;"></ul>
+        </section>
+
+        <!-- ABA PARCELAS -->
+        <section id="tab-parcelas" class="tab-content">
+            <div class="glass" style="padding: 20px; margin-bottom: 20px;">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label data-i18n="whatInstallment">O que você parcelou?</label>
+                    <input type="text" id="parc-desc" class="input-glass" placeholder="Ex: iPhone, Financiamento">
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="totalValue">Valor Total (R$)</label><input type="number" id="parc-valor-total" class="input-glass" placeholder="0.00" step="0.01"></div>
+                    <div class="form-group"><label data-i18n="qtyInstallments">Nº de Parcelas</label><input type="number" id="parc-qtd" class="input-glass" placeholder="Ex: 12"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="paidInstallments">Parcelas Pagas</label><input type="number" id="parc-pagas" class="input-glass" value="0"></div>
+                    <div class="form-group"><label data-i18n="dueDate">Dia Vencimento</label><input type="number" id="parc-venc" class="input-glass" placeholder="Ex: 10"></div>
+                </div>
+                <button class="btn-gradient" onclick="addParcelamento()" data-i18n="registerInstallment">+ Registrar Parcelamento</button>
+            </div>
+            <h3 class="section-title" data-i18n="yourDebts">Suas Dívidas</h3>
+            <ul class="item-list" id="lista-parcelas"></ul>
+        </section>
+
+        <!-- ABA FIXOS E RECORRENTES -->
+        <section id="tab-notas" class="tab-content">
+            <div class="glass" style="padding: 25px; text-align: center; margin-bottom: 20px; background: linear-gradient(135deg, rgba(106,17,203,0.1) 0%, rgba(37,117,252,0.1) 100%);">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px; text-transform: uppercase;" data-i18n="fixedExpenses">Despesas Fixas Mensais</p>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;" data-i18n="monthlyTotal">Total mensal estimado</div>
+                <h2>R$ <span id="fixos-total">0.00</span></h2>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+                <button class="btn-gradient" id="btn-toggle-fixo" onclick="toggleFormFixo()" style="flex: 1;" data-i18n="addFixed">+ Manual</button>
+                <button class="btn-gradient" onclick="abrirModalRecorrente()" style="flex: 2; background: linear-gradient(45deg, #10ac84, #1dd1a1);" data-i18n="newRecurring">+ Despesa Recorrente</button>
+            </div>
+
+            <!-- Manual Fixo -->
+            <div id="form-fixo-container" class="glass" style="padding: 20px; margin-bottom: 20px; display: none;">
+                <h4 style="margin-bottom: 15px; color: var(--text-main);" data-i18n="addFixed">Adicionar Despesa Fixa (Manual)</h4>
+                <div class="form-group" style="margin-bottom: 15px;"><label data-i18n="expenseName">Nome da despesa</label><input type="text" id="fixo-nome" class="input-glass" placeholder="Ex: Aluguel, Internet"></div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="monthlyValue">Valor mensal (R$)</label><input type="number" id="fixo-valor" class="input-glass" placeholder="0.00" step="0.01"></div>
+                    <div class="form-group"><label data-i18n="dueDate">Dia do vencimento</label><input type="number" id="fixo-venc" class="input-glass" placeholder="Ex: 10"></div>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label data-i18n="category">Categoria</label>
+                    <select id="fixo-categoria" class="input-glass">
+                        <option value="Moradia" data-i18n="Housing">Moradia</option><option value="Serviços" data-i18n="Services">Serviços</option><option value="Assinaturas" data-i18n="Subscriptions">Assinaturas</option><option value="Transporte" data-i18n="Transport">Transporte</option><option value="Educação" data-i18n="Education">Educação</option><option value="Saúde" data-i18n="Health">Saúde</option><option value="Outros" data-i18n="Others">Outros</option>
+                    </select>
+                </div>
+                <button class="btn-gradient" onclick="addDespesaFixa()" data-i18n="addFixedBtn">Salvar Manual</button>
+            </div>
+
+            <h3 class="section-title" data-i18n="recurringExpenses" style="margin-bottom: 15px;">Contas Recorrentes (Automáticas)</h3>
+            <ul class="item-list" id="lista-recorrentes" style="margin-bottom: 25px;"></ul>
+
+            <h3 class="section-title" data-i18n="fixedExpensesAndInstallments">Suas Despesas Fixas e Parcelas</h3>
+            <ul class="item-list" id="lista-fixos"></ul>
+        </section>
+
+        <!-- ABA INVESTIMENTOS -->
+        <section id="tab-investimentos" class="tab-content">
+            <div class="glass" style="padding: 25px; text-align: center; margin-bottom: 12px; background: linear-gradient(135deg, rgba(37,117,252,0.15) 0%, rgba(106,17,203,0.15) 100%);">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px; text-transform: uppercase;" data-i18n="estimatedTotal">Total Atual Estimado</p>
+                <h2 style="font-size: 2.7rem; font-weight: bold; color: var(--text-main);">R$ <span id="inv-total">0.00</span></h2>
+            </div>
+            <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                <div class="glass" style="flex: 1; padding: 15px; text-align: center;">
+                    <p style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 5px; text-transform: uppercase;" data-i18n="fixedIncome">Renda Fixa</p>
+                    <h3 style="font-size: 1.2rem; font-weight: bold; color: var(--text-main);">R$ <span id="inv-fixa">0.00</span></h3>
+                </div>
+                <div class="glass" style="flex: 1; padding: 15px; text-align: center;">
+                    <p style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 5px; text-transform: uppercase;" data-i18n="variableIncome">Renda Variável</p>
+                    <h3 style="font-size: 1.2rem; font-weight: bold; color: var(--text-main);">R$ <span id="inv-variavel">0.00</span></h3>
+                </div>
+            </div>
+            <button class="btn-gradient" onclick="abrirModalInvestimento()" style="margin-bottom: 25px;" data-i18n="createInvestment">+ Criar Investimento</button>
+            <h3 class="section-title" data-i18n="myWallet">Minha Carteira</h3>
+            <div id="lista-investimentos-container"></div>
+        </section>
+
+        <!-- ABA DE CONFIGURAÇÕES / PERFIL -->
+        <section id="tab-config" class="tab-content">
+            <div class="glass" style="padding: 30px 20px; text-align: center; margin-bottom: 20px;">
+                <h3 class="section-title" style="margin-top: 0; margin-bottom: 25px;" data-i18n="profileSettings">Seu Perfil</h3>
+                <div class="config-avatar-wrapper" onclick="document.getElementById('input-foto').click()">
+                    <img id="config-avatar-preview" src="" class="config-avatar" alt="Foto de Perfil">
+                    <div class="edit-badge"><svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></div>
+                </div>
+                <input type="file" id="input-foto" accept="image/*" style="display: none;" onchange="abrirModalCrop(event)">
+                <div class="form-group" style="text-align: left; margin-bottom: 20px;"><label data-i18n="usernameLabel">Nome de Usuário</label><input type="text" id="config-nome-input" class="input-glass"></div>
+                <button class="btn-gradient" onclick="salvarPerfil()" data-i18n="saveChanges">Salvar Alterações</button>
+            </div>
+
+            <!-- BACKUP E DADOS (NOVA FUNCIONALIDADE 2) -->
+            <div class="glass" style="padding: 30px 20px; text-align: left; margin-bottom: 20px;">
+                <h3 class="section-title" style="margin-top: 0; margin-bottom: 5px;" data-i18n="backupAndData">Backup e Dados</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;" data-i18n="backupDesc">Proteja e exporte suas informações.</p>
+                
+                <button class="btn-gradient" onclick="exportarJSON()" style="margin-bottom: 12px; font-size: 0.95rem; padding: 12px;" data-i18n="exportJson">📦 Exportar backup completo (JSON)</button>
+                <button class="btn-gradient" onclick="exportarCSV()" style="margin-bottom: 15px; font-size: 0.95rem; padding: 12px; background: linear-gradient(45deg, #10ac84, #1dd1a1);" data-i18n="exportCsv">📊 Exportar movimentações (CSV)</button>
+                
+                <div style="border-top: 1px solid var(--glass-border); padding-top: 15px; margin-top: 5px;">
+                    <button class="btn-gradient" onclick="document.getElementById('import-backup-file').click()" style="margin-bottom: 0; font-size: 0.95rem; padding: 12px; background: transparent; border: 1px solid var(--glass-border); color: var(--text-main);" data-i18n="restoreBackup">🔄 Restaurar backup</button>
+                    <input type="file" id="import-backup-file" accept=".json" style="display:none;" onchange="restaurarBackup(event)">
+                </div>
+            </div>
+
+            <div class="glass" style="padding: 30px 20px; text-align: left; margin-bottom: 20px;">
+                <h3 class="section-title" style="margin-top: 0; margin-bottom: 5px;" data-i18n="personalization">Personalização</h3>
+                <div class="form-row" style="margin-top: 15px;">
+                    <div class="form-group">
+                        <label data-i18n="theme">Tema do Aplicativo</label>
+                        <select id="config-tema" class="input-glass" onchange="mudarTema(this.value)">
+                            <option value="dark" data-i18n="themeDark">🌙 Escuro</option>
+                            <option value="light" data-i18n="themeLight">☀️ Claro</option>
+                            <option value="auto" data-i18n="themeAuto">⚙️ Automático</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="language">Idioma</label>
+                        <select id="config-idioma" class="input-glass" onchange="mudarIdioma(this.value)">
+                            <option value="pt">🇧🇷 Português</option>
+                            <option value="en">🇺🇸 English</option>
+                            <option value="es">🇪🇸 Español</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass" style="padding: 30px 20px; text-align: left;">
+                <h3 class="section-title" style="margin-top: 0; margin-bottom: 5px;" data-i18n="refRates">Taxas de Referência</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;" data-i18n="ratesDesc">Utilizadas para o cálculo estimado de rendimentos.</p>
+                <div class="form-row">
+                    <div class="form-group"><label>CDI (% ao ano)</label><input type="number" id="cfg-taxa-cdi" class="input-glass" step="0.01"></div>
+                    <div class="form-group"><label>Selic (% ao ano)</label><input type="number" id="cfg-taxa-selic" class="input-glass" step="0.01"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>IPCA (% ao ano)</label><input type="number" id="cfg-taxa-ipca" class="input-glass" step="0.01"></div>
+                    <div class="form-group"><label data-i18n="savingsRate">Poupança (% ao ano)</label><input type="number" id="cfg-taxa-poupanca" class="input-glass" step="0.01"></div>
+                </div>
+                <button class="btn-gradient" onclick="salvarTaxasManuais()" style="font-size: 0.95rem; padding: 12px;" data-i18n="updateRates">Atualizar Taxas</button>
+            </div>
+        </section>
+
+        <!-- BARRA INFERIOR (ATUALIZADA COM O CALENDÁRIO) -->
+        <nav class="bottom-nav glass">
+            <div class="nav-item active" onclick="mudarAba('tab-gastos', this)">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span data-i18n="tabHome">Início</span>
+            </div>
+            <div class="nav-item" onclick="mudarAba('tab-calendario', this)">
+                <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg><span data-i18n="tabCalendar">Calendário</span>
+            </div>
+            <div class="nav-item" onclick="mudarAba('tab-parcelas', this)">
+                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg><span data-i18n="tabInstallments">Parcelas</span>
+            </div>
+            <div class="nav-item" onclick="mudarAba('tab-notas', this)">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg><span data-i18n="tabFixed">Fixos</span>
+            </div>
+            <div class="nav-item" onclick="mudarAba('tab-investimentos', this)">
+                <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg><span data-i18n="tabInvest">Investir</span>
+            </div>
+            <div class="nav-item" onclick="mudarAba('tab-config', this)">
+                <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7,1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg><span data-i18n="tabProfile">Perfil</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- MODAIS RESTANTES -->
+    <div id="crop-modal" class="modal-overlay">
+        <div class="glass" style="padding:20px; text-align:center;">
+            <h3 style="margin-bottom: 15px; color: var(--text-main);" data-i18n="adjustPhoto">Ajuste sua Foto</h3>
+            <div class="crop-container"><img id="image-to-crop" style="max-width: 100%; display: block;"></div>
+            <div style="display: flex; gap: 15px; width: 100%; max-width: 400px;">
+                <button class="btn-gradient" style="background: var(--danger); flex: 1;" onclick="fecharModalCrop()" data-i18n="cancel">Cancelar</button>
+                <button class="btn-gradient" style="flex: 2;" onclick="aplicarCrop()" data-i18n="saveCrop">Cortar e Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ganhos-modal" class="modal-overlay">
+        <div class="glass" style="width: 100%; max-width: 400px; padding: 30px 20px; box-sizing: border-box; text-align: center;">
+            <h3 id="ganhos-modal-titulo" style="margin-bottom: 20px; color: var(--text-main);" data-i18n="registerIncome">+ Registrar Receita</h3>
+            <div class="form-group" style="margin-bottom: 15px;"><label data-i18n="description">Descrição</label><input type="text" id="ganho-desc" class="input-glass"></div>
+            <div class="form-group" style="margin-bottom: 25px;"><label data-i18n="value">Valor (R$)</label><input type="number" id="ganho-valor" class="input-glass" step="0.01"></div>
+            <div style="display: flex; gap: 15px;">
+                <button class="btn-gradient" style="background: var(--danger); flex: 1;" onclick="fecharModalGanhos()" data-i18n="cancel">Cancelar</button>
+                <button class="btn-gradient" style="flex: 2;" id="ganhos-modal-btn" onclick="salvarGanho()" data-i18n="add">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gastos-modal" class="modal-overlay">
+        <div class="glass" style="width: 100%; max-width: 400px; padding: 30px 20px; box-sizing: border-box; text-align: center;">
+            <h3 style="margin-bottom: 20px; color: var(--text-main);" data-i18n="newExpense">+ Novo Gasto Diário</h3>
+            <div class="form-group" style="margin-bottom: 12px;"><label data-i18n="description">Descrição</label><input type="text" id="gasto-desc" class="input-glass"></div>
+            <div class="form-group" style="margin-bottom: 12px;"><label data-i18n="value">Valor (R$)</label><input type="number" id="gasto-valor" class="input-glass" step="0.01"></div>
+            <div class="form-row" style="margin-bottom: 20px;">
+                <div class="form-group"><label data-i18n="method">Método</label>
+                    <select id="gasto-metodo" class="input-glass">
+                        <option value="Pix">Pix</option><option value="Débito" data-i18n="Debit">Débito</option><option value="Crédito" data-i18n="Credit">Crédito</option><option value="Dinheiro" data-i18n="Cash">Dinheiro</option>
+                    </select>
+                </div>
+                <div class="form-group"><label data-i18n="category">Categoria</label>
+                    <select id="gasto-categoria" class="input-glass">
+                        <option value="Mercado" data-i18n="Market">Mercado</option><option value="Lazer" data-i18n="Leisure">Lazer</option><option value="Veículo" data-i18n="Vehicle">Veículo</option><option value="Beleza" data-i18n="Beauty">Beleza</option><option value="Farmácia" data-i18n="Pharmacy">Farmácia</option><option value="Moradia" data-i18n="Housing">Moradia</option><option value="Serviços" data-i18n="Services">Serviços</option><option value="Assinaturas" data-i18n="Subscriptions">Assinaturas</option><option value="Transporte" data-i18n="Transport">Transporte</option><option value="Educação" data-i18n="Education">Educação</option><option value="Saúde" data-i18n="Health">Saúde</option><option value="Outros" data-i18n="Others">Outros</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 15px;">
+                <button class="btn-gradient" style="background: var(--danger); flex: 1;" onclick="fecharModalGasto()" data-i18n="cancel">Cancelar</button>
+                <button class="btn-gradient" style="flex: 2;" onclick="addGasto()" data-i18n="addExpenseBtn">Adicionar Gasto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RECORRENTE -->
+    <div id="recorrente-modal" class="modal-overlay" style="z-index: 2010;">
+        <div class="glass" style="width: 100%; max-width: 400px; padding: 30px 20px; box-sizing: border-box; text-align: center; max-height: 90vh; overflow-y: auto;">
+            <h3 id="rec-titulo" style="margin-bottom: 20px; color: var(--text-main);" data-i18n="newRecurring">+ Despesa Recorrente</h3>
+            <div class="form-group" style="margin-bottom: 12px;"><label data-i18n="expenseName">Nome</label><input type="text" id="rec-nome" class="input-glass"></div>
+            <div class="form-group" style="margin-bottom: 12px;"><label data-i18n="value">Valor (R$)</label><input type="number" id="rec-valor" class="input-glass" step="0.01"></div>
+            <div class="form-row" style="margin-bottom: 12px;">
+                <div class="form-group"><label data-i18n="method">Método</label>
+                    <select id="rec-metodo" class="input-glass">
+                        <option value="Pix">Pix</option><option value="Débito" data-i18n="Debit">Débito</option><option value="Crédito" data-i18n="Credit">Crédito</option><option value="Dinheiro" data-i18n="Cash">Dinheiro</option>
+                    </select>
+                </div>
+                <div class="form-group"><label data-i18n="category">Categoria</label>
+                    <select id="rec-categoria" class="input-glass">
+                        <option value="Mercado" data-i18n="Market">Mercado</option><option value="Lazer" data-i18n="Leisure">Lazer</option><option value="Veículo" data-i18n="Vehicle">Veículo</option><option value="Beleza" data-i18n="Beauty">Beleza</option><option value="Farmácia" data-i18n="Pharmacy">Farmácia</option><option value="Moradia" data-i18n="Housing">Moradia</option><option value="Serviços" data-i18n="Services">Serviços</option><option value="Assinaturas" data-i18n="Subscriptions">Assinaturas</option><option value="Transporte" data-i18n="Transport">Transporte</option><option value="Educação" data-i18n="Education">Educação</option><option value="Saúde" data-i18n="Health">Saúde</option><option value="Outros" data-i18n="Others">Outros</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row" style="margin-bottom: 12px;">
+                <div class="form-group"><label data-i18n="dueDate">Dia Vencimento</label><input type="number" id="rec-venc" class="input-glass" placeholder="Ex: 10" min="1" max="31"></div>
+                <div class="form-group"><label data-i18n="startDate">Início</label><input type="month" id="rec-inicio" class="input-glass"></div>
+            </div>
+            <div class="form-group" style="margin-bottom: 25px;"><label data-i18n="endDate">Término (Opcional)</label><input type="month" id="rec-termino" class="input-glass"></div>
+            
+            <div style="display: flex; gap: 15px;">
+                <button class="btn-gradient" style="background: var(--danger); flex: 1;" onclick="fecharModalRecorrente()" data-i18n="cancel">Cancelar</button>
+                <button class="btn-gradient" style="flex: 2;" onclick="salvarRecorrente()" data-i18n="save">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ORÇAMENTOS -->
+    <div id="orcamentos-modal" class="modal-overlay" style="z-index: 2010;">
+        <div class="glass" style="width: 100%; max-width: 400px; padding: 25px 20px; box-sizing: border-box; text-align: center; max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin-bottom: 20px; color: var(--text-main);" data-i18n="manageBudget">Definir Orçamentos Mensais</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;" data-i18n="budgetDesc">Deixe em branco as categorias que não deseja limitar.</p>
+            <div id="orcamentos-inputs-container" style="margin-bottom: 20px;"></div>
+            <div style="display: flex; gap: 15px;">
+                <button class="btn-gradient" style="background: transparent; border: 1px solid var(--glass-border); color: var(--text-main); flex: 1;" onclick="fecharModalOrcamentos()" data-i18n="cancel">Cancelar</button>
+                <button class="btn-gradient" style="flex: 2;" onclick="salvarOrcamentos()" data-i18n="saveChanges">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAIS INVESTIMENTOS -->
+    <div id="investimento-modal" class="modal-overlay">
+        <div class="glass" style="width: 100%; max-width: 400px; padding: 30px 20px; box-sizing: border-box; text-align: center; max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin-bottom: 20px; color: var(--text-main);" data-i18n="newInvestment">+ Novo Investimento</h3>
+            <div class="form-group" style="text-align: left; margin-bottom: 12px;"><label data-i18n="walletName">Nome da Carteira/Ativo</label><input type="text" id="inv-nome" class="input-glass"></div>
+            <div class="form-row" style="margin-bottom: 12px;">
+                <div class="form-group" style="text-align: left;"><label data-i18n="assetType">Tipo de Ativo</label><select id="inv-tipo" class="input-glass"><option value="Renda Fixa" data-i18n="fixedIncome">Renda Fixa</option><option value="Renda Variável" data-i18n="variableIncome">Renda Variável</option></select></div>
+                <div class="form-group" style="text-align: left;"><label data-i18n="initialValue">Valor Inicial (R$)</label><input type="number" id="inv-valor" class="input-glass" step="0.01"></div>
+            </div>
+            <div class="form-group" style="text-align: left; margin-bottom: 12px;">
+                <label data-i18n="yieldType">Tipo de Rentabilidade</label>
+                <select id="inv-rent-tipo" class="input-glass" onchange="toggleRentFields('inv')">
+                    <option value="nenhuma" data-i18n="noYield">Sem rentabilidade</option><option value="cdi">Percentual do CDI</option><option value="selic">Percentual da Selic</option><option value="ipca">IPCA + Taxa Fixa</option><option value="poupanca" data-i18n="savingsRate">Poupança</option><option value="fixa" data-i18n="fixedYield">Taxa Fixa Anual</option>
+                </select>
+            </div>
+            <div class="form-group" id="inv-rent-val-container" style="text-align: left; margin-bottom: 12px; display: none;"><label id="inv-rent-label">Percentual / Taxa</label><input type="number" id="inv-rent-valor" class="input-glass" step="0.01"></div>
+            <div class="form-row" style="margin-bottom: 25px;">
+                <div class="form-group" style="text-align: left;"><label data-i18n="startDate">Data de Início</label><input type="date" id="inv-data" class="input-glass"></div>
+                <div class="form-group" style="text-align: left;"><label data-i18n="optionalGoal">Meta Opcional (R$)</label><input type="number" id="inv-meta" class="input-glass" step="0.01"></div>
+            </div>
+            <div style="display: flex; gap: 15px;"><button class="btn-gradient" style="background: var(--danger); flex: 1;" onclick="fecharModalInvestimento()" data-i18n="cancel">Cancelar</button><button class="btn-gradient" style="flex: 2;" onclick="addInvestimento()" data-i18n="create">Criar</button></div>
+        </div>
+    </div>
+    
+    <div id="detalhes-investimento-modal" class="modal-overlay">
+        <div class="glass" style="width: 100%; max-width: 420px; padding: 25px 20px; text-align: center; max-height: 95vh; overflow-y: auto;">
+            <div id="det-icone" style="font-size: 2.5rem; margin-bottom: 5px;">🛡️</div>
+            <h2 id="det-nome" style="margin-bottom: 2px; color: var(--text-main);">Nome</h2>
+            <p id="det-tipo" style="color: var(--secondary); font-size: 0.8rem; margin-bottom: 15px; font-weight: 500;">Tipo</p>
+            <div style="margin-bottom: 20px;"><p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;" data-i18n="estimatedCurrentBalance">Saldo Atual Estimado</p><h1 id="det-valor-estimado" style="font-size: 2.3rem; color: var(--text-main); font-weight: bold;">R$ 0.00</h1></div>
+            
+            <div class="det-resumo-grid">
+                <div class="det-resumo-box"><p data-i18n="totalApplied">Total Aplicado</p><h4 id="det-valor-investido">R$ 0.00</h4></div>
+                <div class="det-resumo-box" style="border-color: rgba(46, 213, 115, 0.3);"><p data-i18n="accumulatedYield">Rendimento Acum.</p><h4 id="det-rendimento" style="color: var(--success);">+R$ 0.00</h4></div>
+                <div class="det-resumo-box"><p data-i18n="configYield">Rentabilidade Config.</p><h4 id="det-rent-str" style="font-size: 0.85rem;">-</h4></div>
+                <div class="det-resumo-box"><p data-i18n="startDate">Data de Início</p><h4 id="det-data-inicio" style="font-size: 0.85rem;">-</h4></div>
+            </div>
+            
+            <div id="det-meta-container" style="background: rgba(128,128,128,0.1); border-radius: 12px; padding: 15px; margin-bottom: 20px; display: none;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;"><span><span data-i18n="goalLabel">Meta: </span>R$ <span id="det-meta-valor">0.00</span></span><span id="det-meta-pct">0%</span></div>
+                <div class="progress-bar-bg" style="height: 10px;"><div id="det-meta-fill" class="progress-bar-fill" style="width: 0%;"></div></div>
+                <p id="det-meta-status" style="font-size: 0.75rem; font-weight: 500; margin-top: 8px;"></p>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;"><button class="btn-gradient" style="flex: 1; padding: 10px; font-size: 0.85rem;" onclick="abrirModalMovInv('add')" data-i18n="addDeposit">+ Adicionar Aporte</button><button class="btn-gradient" style="flex: 1; padding: 10px; font-size: 0.85rem; background: var(--danger);" onclick="abrirModalMovInv('retirar')" data-i18n="makeWithdrawal">- Fazer Retirada</button></div>
+            <div style="text-align: left; margin-bottom: 20px; background: rgba(128,128,128,0.05); padding: 15px; border-radius: 12px;"><h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase;" data-i18n="statementAndHistory">Extrato e Movimentações</h4><div id="det-historico-lista" style="max-height: 140px; overflow-y: auto; padding-right: 5px;"></div></div>
+            <div style="display: flex; flex-direction: column; gap: 10px;"><button class="btn-small outline" style="padding: 10px; font-size: 0.85rem; color: var(--text-main);" onclick="abrirModalEditInv()" data-i18n="editWalletSettings">⚙️ Editar Configurações da Carteira</button><div style="display: flex; gap: 10px;"><button class="btn-small outline" style="flex: 1; padding: 10px; font-size: 0.85rem; color: var(--text-muted);" onclick="fecharDetalhesInvestimento()" data-i18n="closeBtn">Fechar</button><button class="btn-small outline" style="flex: 1; padding: 10px; font-size: 0.85rem; color: var(--danger); border-color: rgba(255, 71, 87, 0.3);" onclick="deletarInvestimentoAtual()" data-i18n="deleteBtn">🗑️ Excluir</button></div></div>
+        </div>
+    </div>
+
+    <div id="mov-inv-modal" class="modal-overlay" style="z-index: 2010;">
+        <div class="glass" style="width: 100%; max-width: 350px; padding: 30px 20px; text-align: center;">
+            <h3 id="mov-inv-titulo" style="margin-bottom: 20px; color: var(--text-main);">Ação</h3>
+            <div class="form-group" style="text-align: left; margin-bottom: 15px;"><label>Data</label><input type="date" id="mov-inv-data" class="input-glass"></div>
+            <div class="form-group" style="text-align: left; margin-bottom: 15px;"><label data-i18n="value">Valor (R$)</label><input type="number" id="mov-inv-valor" class="input-glass" step="0.01"></div>
+            <div class="form-group" style="text-align: left; margin-bottom: 25px;"><label data-i18n="optionalObs">Observação (Opcional)</label><input type="text" id="mov-inv-obs" class="input-glass"></div>
+            <div style="display: flex; gap: 10px;"><button class="btn-gradient" style="background: transparent; border: 1px solid var(--glass-border); flex: 1; color: var(--text-main);" onclick="fecharModalMovInv()" data-i18n="cancel">Cancelar</button><button class="btn-gradient" id="mov-inv-btn" style="flex: 1;" onclick="confirmarMovInv()" data-i18n="confirmBtn">Confirmar</button></div>
+        </div>
+    </div>
+    
+    <div id="edit-inv-modal" class="modal-overlay" style="z-index: 2010;">
+        <div class="glass" style="width: 100%; max-width: 380px; padding: 30px 20px; text-align: center;">
+            <h3 style="margin-bottom: 20px; color: var(--text-main);" data-i18n="editWallet">Editar Carteira</h3>
+            <div class="form-group" style="text-align: left; margin-bottom: 12px;"><label>Nome</label><input type="text" id="edit-inv-nome" class="input-glass"></div>
+            <div class="form-row" style="margin-bottom: 12px;">
+                <div class="form-group" style="text-align: left;"><label>Tipo</label><select id="edit-inv-tipo" class="input-glass"><option value="Renda Fixa" data-i18n="fixedIncome">Renda Fixa</option><option value="Renda Variável" data-i18n="variableIncome">Renda Variável</option></select></div>
+                <div class="form-group" style="text-align: left;"><label data-i18n="optionalGoal">Meta Opcional (R$)</label><input type="number" id="edit-inv-meta" class="input-glass" step="0.01"></div>
+            </div>
+            <div class="form-group" style="text-align: left; margin-bottom: 12px;">
+                <label data-i18n="yieldType">Tipo de Rentabilidade</label>
+                <select id="edit-inv-rent-tipo" class="input-glass" onchange="toggleRentFields('edit-inv')">
+                    <option value="nenhuma" data-i18n="noYield">Sem rentabilidade</option><option value="cdi">Percentual do CDI</option><option value="selic">Percentual da Selic</option><option value="ipca">IPCA + Taxa Fixa</option><option value="poupanca" data-i18n="savingsRate">Poupança</option><option value="fixa" data-i18n="fixedYield">Taxa Fixa Anual</option>
+                </select>
+            </div>
+            <div class="form-group" id="edit-inv-rent-val-container" style="text-align: left; margin-bottom: 25px; display: none;"><label id="edit-inv-rent-label">Percentual / Taxa</label><input type="number" id="edit-inv-rent-valor" class="input-glass" step="0.01"></div>
+            <div style="display: flex; gap: 10px;"><button class="btn-gradient" style="background: transparent; border: 1px solid var(--glass-border); flex: 1; color:var(--text-main);" onclick="fecharModalEditInv()" data-i18n="cancel">Cancelar</button><button class="btn-gradient" style="flex: 1;" onclick="salvarEditInv()" data-i18n="save">Salvar</button></div>
+        </div>
+    </div>
+
+
+    <script>
+        // ==== SISTEMA DE TRADUÇÃO (i18n) ====
+        const traducoes = {
+            pt: {
+                appName: "ControlFine", slogan: "Seu controle financeiro pessoal", usernamePlaceholder: "Como quer ser chamado?", passwordPlaceholder: "Crie sua senha", passwordLoginPlaceholder: "Digite sua senha", createAccountBtn: "Criar Conta e Entrar", unlockBtn: "Desbloquear", welcomeNew: "Crie sua conta para começar", welcomeBack: "Olá, {user}! Digite sua senha para acessar:", greeting: "Olá", lock: "Bloquear", availBalance: "Saldo Disponível", totalExpenses: "Total de Gastos", totalIncomes: "Total de Ganhos", addIncome: "+ Adicionar Ganhos", currentMonthIncomes: "Ganhos do Mês Atual", latestExpenses: "Últimos Registros de Gastos", newExpense: "+ Novo Gasto Diário", description: "Descrição", value: "Valor (R$)", method: "Método", category: "Categoria", cancel: "Cancelar", add: "Adicionar", deleteBtn: "🗑️ Excluir", delete: "Apagar", edit: "Editar", save: "Salvar", saveChanges: "Salvar Alterações", Debit: "Débito", Credit: "Crédito", Cash: "Dinheiro", Market: "Mercado", Leisure: "Lazer", Vehicle: "Veículo", Beauty: "Beleza", Pharmacy: "Farmácia", Others: "Outros", Housing: "Moradia", Services: "Serviços", Subscriptions: "Assinaturas", Transport: "Transporte", Education: "Educação", Health: "Saúde", whatInstallment: "O que você parcelou?", totalValue: "Valor Total (R$)", qtyInstallments: "Nº de Parcelas", paidInstallments: "Parcelas Pagas", dueDate: "Dia Vencimento", registerInstallment: "+ Registrar Parcelamento", yourDebts: "Suas Dívidas", fixedExpenses: "Despesas Fixas Mensais", monthlyTotal: "Total mensal estimado", addFixed: "+ Manual", expenseName: "Nome da despesa", monthlyValue: "Valor mensal (R$)", addFixedBtn: "Salvar Manual", fixedExpensesAndInstallments: "Suas Despesas Fixas e Parcelas", estimatedTotal: "Total Atual Estimado", fixedIncome: "Renda Fixa", variableIncome: "Renda Variável", createInvestment: "+ Criar Investimento", myWallet: "Minha Carteira", profileSettings: "Seu Perfil", usernameLabel: "Nome de Usuário", personalization: "Personalização", theme: "Tema do Aplicativo", language: "Idioma", themeDark: "🌙 Escuro", themeLight: "☀️ Claro", themeAuto: "⚙️ Automático", refRates: "Taxas de Referência", ratesDesc: "Utilizadas para o cálculo estimado de rendimentos.", savingsRate: "Poupança (% ao ano)", updateRates: "Atualizar Taxas", tabHome: "Início", tabCalendar: "Calendário", tabInstallments: "Parcelas", tabFixed: "Fixos", tabInvest: "Investir", tabProfile: "Perfil", paidThisMonth: "✓ Pago este mês", fullyPaid: "QUITADO! 🎉", fullyPaidThisMonth: "QUITADO NESTE MÊS 🎉", payInstallment: "Pagar Parcela", markAsPaid: "Marcar como Pago", remainingInstallments: "Restam {n} parcelas", installmentOf: "Parcela {n} de {total}", remainingTotal: "Total Restante", originalTotal: "Original", noInvestments: "Você não possui investimentos.", invested: "Investido", yield: "Rend.", percentOfGoal: "{p}% da meta", newInvestment: "+ Novo Investimento", walletName: "Nome da Carteira/Ativo", assetType: "Tipo de Ativo", initialValue: "Valor Inicial (R$)", yieldType: "Tipo de Rentabilidade", noYield: "Sem rentabilidade", fixedYield: "Taxa Fixa Anual", startDate: "Início", endDate: "Término (Opcional)", optionalGoal: "Meta Opcional (R$)", create: "Criar", estimatedCurrentBalance: "Saldo Atual Estimado", totalApplied: "Total Aplicado", accumulatedYield: "Rendimento Acum.", configYield: "Rentabilidade Config.", goalLabel: "Meta: ", targetReached: "Meta atingida! 🎉", missingForGoal: "Falta: ", addDeposit: "+ Adicionar Aporte", makeWithdrawal: "- Fazer Retirada", statementAndHistory: "Extrato e Movimentações", editWalletSettings: "⚙️ Editar Configurações da Carteira", closeBtn: "Fechar", optionalObs: "Observação (Opcional)", confirmBtn: "Confirmar", editWallet: "Editar Carteira", adjustPhoto: "Ajuste sua Foto", saveCrop: "Cortar e Salvar", registerIncome: "+ Registrar Receita", addExpenseBtn: "Adicionar Gasto", netWorth: "Patrimônio Total", investments: "Investimentos", incomes: "Entradas Mês", expenses: "Gastos Mês", categoryExpenses: "Gastos por Categoria", goalsSummary: "Resumo de Metas", latestTransactions: "Últimas Movimentações", seeAll: "Ver Todas", hide: "Ocultar", fullHistory: "Histórico e Filtros", searchPlaceholder: "Pesquisar por nome...", filtersBtn: "Filtros", month: "Mês", year: "Ano", type: "Tipo", allMonths: "Todos", allYears: "Todos", allTypes: "Todos", typeEntry: "Entradas", typeExpense: "Gastos", typeInvestment: "Investimentos", allCategories: "Todas", allMethods: "Todas", minValue: "Valor Mín. (R$)", maxValue: "Valor Máx. (R$)", clearFilters: "Limpar Filtros", noResults: "Nenhuma movimentação encontrada.", tryClearFilters: "Tente alterar ou limpar os filtros.", foundTransactions: "{n} movimentações encontradas", totalEntries: "Total de entradas", totalExpenses: "Total de Gastos", totalInvestments: "Total investido", jan: "Janeiro", feb: "Fevereiro", mar: "Março", apr: "Abril", may: "Maio", jun: "Junho", jul: "Julho", aug: "Agosto", sep: "Setembro", oct: "Outubro", nov: "Novembro", dec: "Dezembro",
+                recurringExpenses: "Contas Recorrentes (Automáticas)", newRecurring: "+ Despesa Recorrente", active: "Ativo", paused: "Pausado", manage: "Gerenciar", monthlyBudget: "Orçamento Mensal", noBudget: "Nenhum orçamento definido.", manageBudget: "Definir Orçamentos Mensais", budgetDesc: "Deixe em branco as categorias que não deseja limitar.", budgetWarning: "Atenção (Gasto elevado)", budgetNearLimit: "Quase no limite", budgetExceeded: "Ultrapassado em",
+                backupAndData: "Backup e Dados", backupDesc: "Proteja e exporte suas informações.", exportJson: "📦 Exportar backup completo (JSON)", exportCsv: "📊 Exportar movimentações (CSV)", restoreBackup: "🔄 Restaurar backup", restoreConfirm: "Restaurar este backup substituirá todos os dados atuais do aplicativo de forma irreversível. Deseja continuar?", restoreInvalid: "Não foi possível restaurar este backup. O arquivo pode estar corrompido ou ser incompatível.", restoreSuccess: "Backup restaurado com sucesso!",
+                projectedBalance: "Saldo previsto", expectedIncomes: "Entradas previstas", expectedExpenses: "Gastos previstos", upcomingEvents: "Eventos Deste Dia"
+            },
+            en: {
+                appName: "ControlFine", slogan: "Your personal financial control", usernamePlaceholder: "What should we call you?", passwordPlaceholder: "Create your password", passwordLoginPlaceholder: "Enter your password", createAccountBtn: "Create Account & Login", unlockBtn: "Unlock", welcomeNew: "Create your account to start", welcomeBack: "Hello, {user}! Enter your password:", greeting: "Hello", lock: "Lock", availBalance: "Current Balance", totalExpenses: "Total Expenses", totalIncomes: "Total Incomes", addIncome: "+ Add Income", currentMonthIncomes: "Current Month Incomes", latestExpenses: "Full Expenses History", newExpense: "+ New Daily Expense", description: "Description", value: "Value", method: "Method", category: "Category", cancel: "Cancel", add: "Add", deleteBtn: "🗑️ Delete", delete: "Delete", edit: "Edit", save: "Save", saveChanges: "Save Changes", Debit: "Debit", Credit: "Credit", Cash: "Cash", Market: "Market", Leisure: "Leisure", Vehicle: "Vehicle", Beauty: "Beauty", Pharmacy: "Pharmacy", Others: "Others", Housing: "Housing", Services: "Services", Subscriptions: "Subscriptions", Transport: "Transport", Education: "Education", Health: "Health", whatInstallment: "What did you finance?", totalValue: "Total Value", qtyInstallments: "No. Installments", paidInstallments: "Paid Installments", dueDate: "Due Date", registerInstallment: "+ Register Installment", yourDebts: "Your Debts", fixedExpenses: "Fixed Monthly Expenses", monthlyTotal: "Estimated monthly total", addFixed: "+ Manual", expenseName: "Expense name", monthlyValue: "Monthly value", addFixedBtn: "Save Manual", fixedExpensesAndInstallments: "Fixed Expenses and Installments", estimatedTotal: "Estimated Total", fixedIncome: "Fixed Income", variableIncome: "Variable Income", createInvestment: "+ Create Investment", myWallet: "My Portfolio", profileSettings: "Your Profile", usernameLabel: "Username", personalization: "Personalization", theme: "App Theme", language: "Language", themeDark: "🌙 Dark", themeLight: "☀️ Light", themeAuto: "⚙️ Auto", refRates: "Reference Rates", ratesDesc: "Used for estimated yield calculations.", savingsRate: "Savings (% per year)", updateRates: "Update Rates", tabHome: "Home", tabCalendar: "Calendar", tabInstallments: "Installm.", tabFixed: "Fixed", tabInvest: "Invest", tabProfile: "Profile", paidThisMonth: "✓ Paid this month", fullyPaid: "PAID OFF! 🎉", fullyPaidThisMonth: "PAID OFF THIS MONTH 🎉", payInstallment: "Pay Installment", markAsPaid: "Mark as Paid", remainingInstallments: "{n} installments left", installmentOf: "Installment {n} of {total}", remainingTotal: "Total Remaining", originalTotal: "Original", noInvestments: "You don't have any investments.", invested: "Invested", yield: "Yield", percentOfGoal: "{p}% of goal", newInvestment: "+ New Investment", walletName: "Wallet/Asset Name", assetType: "Asset Type", initialValue: "Initial Value", yieldType: "Yield Type", noYield: "No yield", fixedYield: "Annual Fixed Rate", startDate: "Start", endDate: "End (Optional)", optionalGoal: "Optional Goal", create: "Create", estimatedCurrentBalance: "Estimated Current Balance", totalApplied: "Total Applied", accumulatedYield: "Accumulated Yield", configYield: "Config. Yield", goalLabel: "Goal: ", targetReached: "Goal reached! 🎉", missingForGoal: "Missing: ", addDeposit: "+ Add Deposit", makeWithdrawal: "- Make Withdrawal", statementAndHistory: "Statement & Transactions", editWalletSettings: "⚙️ Edit Wallet Settings", closeBtn: "Close", optionalObs: "Observation (Optional)", confirmBtn: "Confirm", editWallet: "Edit Portfolio", adjustPhoto: "Adjust your Photo", saveCrop: "Crop & Save", registerIncome: "+ Register Income", addExpenseBtn: "Add Expense", netWorth: "Total Net Worth", investments: "Investments", incomes: "Incomes", expenses: "Expenses", categoryExpenses: "Expenses by Category", goalsSummary: "Goals Summary", latestTransactions: "Latest Transactions", seeAll: "See All", hide: "Hide", fullHistory: "History & Filters", searchPlaceholder: "Search by name...", filtersBtn: "Filters", month: "Month", year: "Year", type: "Type", allMonths: "All", allYears: "All", allTypes: "All", typeEntry: "Incomes", typeExpense: "Expenses", typeInvestment: "Investments", allCategories: "All", allMethods: "All", minValue: "Min Value", maxValue: "Max Value", clearFilters: "Clear Filters", noResults: "No transactions found.", tryClearFilters: "Try modifying or clearing your filters.", foundTransactions: "{n} transactions found", totalEntries: "Total Incomes", totalExpenses: "Total Expenses", totalInvestments: "Total Invested", jan: "January", feb: "February", mar: "March", apr: "April", may: "May", jun: "June", jul: "July", aug: "August", sep: "September", oct: "October", nov: "November", dec: "December",
+                recurringExpenses: "Recurring Expenses (Auto)", newRecurring: "+ Recurring Expense", active: "Active", paused: "Paused", manage: "Manage", monthlyBudget: "Monthly Budget", noBudget: "No budget defined.", manageBudget: "Set Monthly Budgets", budgetDesc: "Leave blank categories you do not want to limit.", budgetWarning: "Warning (High expense)", budgetNearLimit: "Near limit", budgetExceeded: "Exceeded by",
+                backupAndData: "Backup & Data", backupDesc: "Protect and export your information.", exportJson: "📦 Export Full Backup (JSON)", exportCsv: "📊 Export Transactions (CSV)", restoreBackup: "🔄 Restore Backup", restoreConfirm: "Restoring this backup will replace all current app data irreversibly. Do you want to continue?", restoreInvalid: "Could not restore this backup. The file might be corrupted or incompatible.", restoreSuccess: "Backup restored successfully!",
+                projectedBalance: "Projected Balance", expectedIncomes: "Expected Incomes", expectedExpenses: "Expected Expenses", upcomingEvents: "Events For This Day"
+            },
+            es: {
+                appName: "ControlFine", slogan: "Tu control financiero personal", usernamePlaceholder: "¿Cómo quieres llamarte?", passwordPlaceholder: "Crea tu contraseña", passwordLoginPlaceholder: "Ingresa tu contraseña", createAccountBtn: "Crear Cuenta y Entrar", unlockBtn: "Desbloquear", welcomeNew: "Crea tu cuenta para empezar", welcomeBack: "¡Hola, {user}! Ingresa tu contraseña:", greeting: "Hola", lock: "Bloquear", availBalance: "Saldo Actual", totalExpenses: "Total de Gastos", totalIncomes: "Total de Ingresos", addIncome: "+ Añadir Ingreso", currentMonthIncomes: "Ingresos del Mes", latestExpenses: "Historial Completo de Gastos", newExpense: "+ Nuevo Gasto Diario", description: "Descripción", value: "Valor", method: "Método", category: "Categoría", cancel: "Cancelar", add: "Añadir", deleteBtn: "🗑️ Eliminar", delete: "Eliminar", edit: "Editar", save: "Guardar", saveChanges: "Guardar Cambios", Debit: "Débito", Credit: "Crédito", Cash: "Efectivo", Market: "Mercado", Leisure: "Ocio", Vehicle: "Vehículo", Beauty: "Belleza", Pharmacy: "Farmacia", Others: "Otros", Housing: "Vivienda", Services: "Servicios", Subscriptions: "Suscripciones", Transport: "Transporte", Education: "Educación", Health: "Salud", whatInstallment: "¿Qué fraccionaste?", totalValue: "Valor Total", qtyInstallments: "Nº de Cuotas", paidInstallments: "Cuotas Pagadas", dueDate: "Día Vencimiento", registerInstallment: "+ Registrar Cuota", yourDebts: "Tus Deudas", fixedExpenses: "Gastos Fijos Mensuales", monthlyTotal: "Total mensual estimado", addFixed: "+ Manual", expenseName: "Nombre del gasto", monthlyValue: "Valor mensual", addFixedBtn: "Guardar Manual", fixedExpensesAndInstallments: "Gastos Fijos y Cuotas", estimatedTotal: "Total Estimado", fixedIncome: "Renta Fija", variableIncome: "Renta Variable", createInvestment: "+ Crear Inversión", myWallet: "Mi Cartera", profileSettings: "Tu Perfil", usernameLabel: "Nombre de Usuario", personalization: "Personalización", theme: "Tema de la App", language: "Idioma", themeDark: "🌙 Oscuro", themeLight: "☀️ Claro", themeAuto: "⚙️ Auto", refRates: "Tasas de Referencia", ratesDesc: "Utilizadas para cálculos de rendimiento.", savingsRate: "Ahorros (% anual)", updateRates: "Actualizar Tasas", tabHome: "Inicio", tabCalendar: "Calendario", tabInstallments: "Cuotas", tabFixed: "Fijos", tabInvest: "Invertir", tabProfile: "Perfil", paidThisMonth: "✓ Pagado este mes", fullyPaid: "¡PAGADO! 🎉", fullyPaidThisMonth: "¡PAGADO ESTE MES! 🎉", payInstallment: "Pagar Cuota", markAsPaid: "Marcar como Pagado", remainingInstallments: "Faltan {n} cuotas", installmentOf: "Cuota {n} de {total}", remainingTotal: "Total Restante", originalTotal: "Original", noInvestments: "No tienes inversiones.", invested: "Invertido", yield: "Rend.", percentOfGoal: "{p}% de la meta", newInvestment: "+ Nueva Inversión", walletName: "Nombre de Cartera", assetType: "Tipo de Activo", initialValue: "Valor Inicial", yieldType: "Tipo de Rendimiento", noYield: "Sin rendimiento", fixedYield: "Tasa Fija Anual", startDate: "Inicio", endDate: "Fin (Opcional)", optionalGoal: "Meta Opcional", create: "Crear", estimatedCurrentBalance: "Saldo Actual Estimado", totalApplied: "Total Aplicado", accumulatedYield: "Rendimiento Acum.", configYield: "Rendimiento Config.", goalLabel: "Meta: ", targetReached: "¡Meta alcanzada! 🎉", missingForGoal: "Falta: ", addDeposit: "+ Añadir Aporte", makeWithdrawal: "- Hacer Retiro", statementAndHistory: "Extracto y Transacciones", editWalletSettings: "⚙️ Editar Config. de Cartera", closeBtn: "Cerrar", optionalObs: "Observación (Opcional)", confirmBtn: "Confirmar", editWallet: "Editar Cartera", adjustPhoto: "Ajusta tu Foto", saveCrop: "Recortar y Guardar", registerIncome: "+ Registrar Ingreso", addExpenseBtn: "Añadir Gasto", netWorth: "Patrimonio Total", investments: "Inversiones", incomes: "Ingresos", expenses: "Gastos", categoryExpenses: "Gastos por Categoría", goalsSummary: "Resumen de Metas", latestTransactions: "Últimas Transacciones", seeAll: "Ver Todas", hide: "Ocultar", fullHistory: "Historial y Filtros", searchPlaceholder: "Buscar por nombre...", filtersBtn: "Filtros", month: "Mes", year: "Año", type: "Tipo", allMonths: "Todos", allYears: "Todos", allTypes: "Todos", typeEntry: "Ingresos", typeExpense: "Gastos", typeInvestment: "Inversiones", allCategories: "Todas", allMethods: "Todos", minValue: "Valor Mín.", maxValue: "Valor Máx.", clearFilters: "Limpiar Filtros", noResults: "No se encontraron transacciones.", tryClearFilters: "Intenta modificar o limpiar tus filtros.", foundTransactions: "{n} transacciones encontradas", totalEntries: "Total de Ingresos", totalExpenses: "Total de Gastos", totalInvestments: "Total Invertido", jan: "Enero", feb: "Febrero", mar: "Marzo", apr: "Abril", may: "Mayo", jun: "Junio", jul: "Julio", aug: "Agosto", sep: "Septiembre", oct: "Octubre", nov: "Noviembre", dec: "Diciembre",
+                recurringExpenses: "Gastos Recurrentes (Auto)", newRecurring: "+ Gasto Recurrente", active: "Activo", paused: "Pausado", manage: "Administrar", monthlyBudget: "Presupuesto Mensual", noBudget: "No hay presupuestos definidos.", manageBudget: "Definir Presupuestos", budgetDesc: "Deja en blanco las categorías que no deseas limitar.", budgetWarning: "Atención (Gasto alto)", budgetNearLimit: "Casi al límite", budgetExceeded: "Excedido por",
+                backupAndData: "Backup y Datos", backupDesc: "Protege y exporta tu información.", exportJson: "📦 Exportar Backup Completo (JSON)", exportCsv: "📊 Exportar Transacciones (CSV)", restoreBackup: "🔄 Restaurar Backup", restoreConfirm: "Restaurar este backup reemplazará todos los datos actuales de la aplicación de forma irreversible. ¿Deseas continuar?", restoreInvalid: "No se pudo restaurar este backup. El archivo puede estar corrupto o ser incompatible.", restoreSuccess: "¡Backup restaurado con éxito!",
+                projectedBalance: "Saldo proyectado", expectedIncomes: "Ingresos previstos", expectedExpenses: "Gastos previstos", upcomingEvents: "Eventos De Este Día"
+            }
+        };
+
+        let currentLang = 'pt';
+        const categoriasPadrao = ["Mercado", "Lazer", "Veículo", "Beleza", "Farmácia", "Moradia", "Serviços", "Assinaturas", "Transporte", "Educação", "Saúde", "Outros"];
+        
+        function t(key, params = {}) {
+            let str = (traducoes[currentLang] && traducoes[currentLang][key]) || traducoes['pt'][key] || key;
+            for (let k in params) str = str.replace(`{${k}}`, params[k]);
+            return str;
+        }
+
+        function aplicarIdiomaDOM() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const k = el.getAttribute('data-i18n');
+                if (traducoes[currentLang] && traducoes[currentLang][k]) {
+                    if (el.tagName === 'OPTION') el.text = traducoes[currentLang][k];
+                    else el.innerText = traducoes[currentLang][k];
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const k = el.getAttribute('data-i18n-placeholder');
+                if (traducoes[currentLang] && traducoes[currentLang][k]) el.placeholder = traducoes[currentLang][k];
+            });
+        }
+
+        function mudarIdioma(lang) {
+            currentLang = lang;
+            localStorage.setItem('financas_idioma', lang);
+            aplicarIdiomaDOM();
+            renderizarTela();
+            
+            const auth = sessionStorage.getItem('financas_authenticated');
+            if(!auth && localStorage.getItem('financas_password')) {
+                const u = localStorage.getItem('financas_user');
+                document.getElementById('login-msg').innerText = t('welcomeBack', {user: u});
+            } else if (!auth) {
+                document.getElementById('login-msg').innerText = t('welcomeNew');
+            }
+        }
+
+        // ==== SISTEMA DE TEMAS ====
+        function mudarTema(tema) {
+            localStorage.setItem('financas_tema', tema);
+            aplicarTema(tema);
+        }
+
+        function aplicarTema(tema) {
+            if (tema === 'auto') {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.setAttribute('data-theme', 'light');
+                else document.documentElement.removeAttribute('data-theme');
+            } else if (tema === 'light') document.documentElement.setAttribute('data-theme', 'light');
+            else document.documentElement.removeAttribute('data-theme');
+            document.getElementById('config-tema').value = tema;
+        }
+
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+            if(localStorage.getItem('financas_tema') === 'auto') aplicarTema('auto');
+        });
+
+        // ==== INICIALIZAÇÃO DE PREFERÊNCIAS ====
+        function carregarPreferencias() {
+            const temaSalvo = localStorage.getItem('financas_tema') || 'dark';
+            const idiomaSalvo = localStorage.getItem('financas_idioma') || 'pt';
+            aplicarTema(temaSalvo);
+            document.getElementById('config-idioma').value = idiomaSalvo;
+            mudarIdioma(idiomaSalvo);
+        }
+
+        const defaultAvatar = "data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path fill='%23a0a5b1' d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>";
+
+        // ==== FUNÇÕES AUXILIARES FINANCEIRAS ====
+        function converterParaCentavos(valor) {
+            if (!valor) return 0;
+            if (typeof valor === 'string') valor = valor.replace(',', '.');
+            return Math.round(parseFloat(valor) * 100) || 0;
+        }
+        function converterDeCentavos(centavos) { return (centavos / 100); }
+        function formatarMoeda(valor) { return parseFloat(valor).toFixed(2); }
+
+        function calcValorParcela(p, index) {
+            if (index <= 0) index = 1;
+            let totalCentavos = converterParaCentavos(p.total);
+            let qtd = parseInt(p.qtd) || 1;
+            let baseCentavos = Math.floor(totalCentavos / qtd);
+            let resto = totalCentavos % qtd;
+            if (index === qtd) return converterDeCentavos(baseCentavos + resto);
+            return converterDeCentavos(baseCentavos);
+        }
+
+        const TaxasAPI = {
+            obter: function() {
+                const salvas = JSON.parse(localStorage.getItem('financas_taxas'));
+                return salvas || { cdi: 10.40, selic: 10.50, ipca: 4.50, poupanca: 6.17 };
+            },
+            salvar: function(cdi, selic, ipca, poup) {
+                localStorage.setItem('financas_taxas', JSON.stringify({ cdi: parseFloat(cdi)||0, selic: parseFloat(selic)||0, ipca: parseFloat(ipca)||0, poupanca: parseFloat(poup)||0 }));
+            }
+        };
+
+        // ==== SISTEMA DE LOGIN ====
+        function verificarLogin() {
+            carregarPreferencias();
+            const senhaSalva = localStorage.getItem('financas_password');
+            const autenticadoNestaSessao = sessionStorage.getItem('financas_authenticated');
+
+            if (!senhaSalva) {
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-screen').style.display = 'none';
+                document.getElementById('user-wrapper').style.display = 'block';
+                document.getElementById('password-input').placeholder = t('passwordPlaceholder');
+                document.getElementById('login-msg').innerText = t('welcomeNew');
+                document.getElementById('login-btn').innerText = t('createAccountBtn');
+            } else if (!autenticadoNestaSessao) {
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-screen').style.display = 'none';
+                document.getElementById('user-wrapper').style.display = 'none';
+                document.getElementById('password-input').placeholder = t('passwordLoginPlaceholder');
+                const usuario = localStorage.getItem('financas_user');
+                document.getElementById('login-msg').innerText = t('welcomeBack', {user: usuario});
+                document.getElementById('login-btn').innerText = t('unlockBtn');
+            } else {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'block';
+                carregarPerfil();
+                carregarDados();
+            }
+        }
+
+        function processarLogin() {
+            const senhaSalva = localStorage.getItem('financas_password');
+            const senhaDigitada = document.getElementById('password-input').value;
+
+            if (!senhaSalva) {
+                const nomeDigitado = document.getElementById('username-input').value.trim();
+                if (nomeDigitado === "") return alert("Por favor, digite seu nome.");
+                if (senhaDigitada === "") return alert("Por favor, escolha uma senha.");
+                localStorage.setItem('financas_user', nomeDigitado);
+                localStorage.setItem('financas_password', senhaDigitada);
+                sessionStorage.setItem('financas_authenticated', 'true');
+                document.getElementById('password-input').value = '';
+                verificarLogin();
+            } else {
+                if (senhaDigitada === senhaSalva) {
+                    sessionStorage.setItem('financas_authenticated', 'true');
+                    document.getElementById('password-input').value = '';
+                    verificarLogin();
+                } else { alert("Senha incorreta! Tente novamente."); }
+            }
+        }
+
+        function bloquearApp() { sessionStorage.removeItem('financas_authenticated'); verificarLogin(); }
+
+        // ==== NAVEGAÇÃO ====
+        function mudarAba(abaId, elementoClicado) {
+            document.querySelectorAll('.tab-content').forEach(aba => aba.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(abaId).classList.add('active');
+            elementoClicado.classList.add('active');
+            
+            const minHeader = document.getElementById('painel-saldo-min');
+            const btnFlutuante = document.getElementById('btn-floating-gasto');
+
+            if (abaId === 'tab-gastos' || abaId === 'tab-config' || abaId === 'tab-investimentos') {
+                minHeader.style.display = 'none';
+            } else {
+                minHeader.style.display = 'block';
+            }
+            
+            if (abaId === 'tab-gastos') btnFlutuante.style.display = 'flex';
+            else btnFlutuante.style.display = 'none';
+            
+            if(abaId === 'tab-calendario') renderizarCalendario();
+            renderizarTela();
+        }
+
+        function alternarListaCompletaGastos() {
+            const wrap = document.getElementById('lista-gastos-wrapper');
+            const btn = document.getElementById('btn-toggle-history');
+            if(wrap.style.display === 'none') {
+                wrap.style.display = 'block';
+                btn.innerText = t('hide');
+                inicializarFiltros();
+                window.scrollTo({ top: wrap.offsetTop - 20, behavior: 'smooth' });
+            } else {
+                wrap.style.display = 'none';
+                btn.innerText = t('seeAll');
+            }
+        }
+
+        // ==== PERFIL & BACKUPS ====
+        let cropperInstance = null;
+
+        function carregarPerfil() {
+            const nome = localStorage.getItem('financas_user');
+            const foto = localStorage.getItem('financas_foto') || defaultAvatar;
+            document.getElementById('display-name').innerText = nome;
+            document.getElementById('header-avatar').src = foto;
+            document.getElementById('config-nome-input').value = nome;
+            document.getElementById('config-avatar-preview').src = foto;
+
+            const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            document.getElementById('display-mes').innerText = `| ${nomesMeses[new Date().getMonth()]} de ${new Date().getFullYear()}`;
+
+            const tx = TaxasAPI.obter();
+            document.getElementById('cfg-taxa-cdi').value = tx.cdi;
+            document.getElementById('cfg-taxa-selic').value = tx.selic;
+            document.getElementById('cfg-taxa-ipca').value = tx.ipca;
+            document.getElementById('cfg-taxa-poupanca').value = tx.poupanca;
+        }
+
+        function salvarPerfil() {
+            const novoNome = document.getElementById('config-nome-input').value.trim();
+            if (novoNome === "") return alert("O nome não pode ficar vazio!");
+            localStorage.setItem('financas_user', novoNome);
+            carregarPerfil();
+            alert(t('saveChanges'));
+        }
+
+        function salvarTaxasManuais() {
+            TaxasAPI.salvar(document.getElementById('cfg-taxa-cdi').value, document.getElementById('cfg-taxa-selic').value, document.getElementById('cfg-taxa-ipca').value, document.getElementById('cfg-taxa-poupanca').value);
+            alert("Taxas atualizadas!"); renderizarTela();
+        }
+
+        function abrirModalCrop(event) {
+            const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
+            reader.onload = function(e) { document.getElementById('image-to-crop').src = e.target.result; document.getElementById('crop-modal').style.display = 'flex'; if (cropperInstance) cropperInstance.destroy(); cropperInstance = new Cropper(document.getElementById('image-to-crop'), { aspectRatio: 1, viewMode: 1 }); };
+            reader.readAsDataURL(file); event.target.value = ''; 
+        }
+
+        function fecharModalCrop() { document.getElementById('crop-modal').style.display = 'none'; if (cropperInstance) cropperInstance.destroy(); }
+        function aplicarCrop() { if(!cropperInstance) return; const canvas = cropperInstance.getCroppedCanvas({width:300,height:300}); localStorage.setItem('financas_foto', canvas.toDataURL('image/jpeg', 0.7)); carregarPerfil(); fecharModalCrop(); }
+
+        // ==========================================
+        // NOVA FUNCIONALIDADE 2: BACKUP E EXPORTAÇÃO
+        // ==========================================
+        function exportarJSON() {
+            let backup = { version: 1, createdAt: new Date().toISOString(), data: {} };
+            for(let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                if(key.startsWith('financas_')) {
+                    let val = localStorage.getItem(key);
+                    try { backup.data[key] = JSON.parse(val); } catch(e) { backup.data[key] = val; }
+                }
+            }
+            let blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = `backup-financeiro-${hojeInput()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportarCSV() {
+            let mix = obterHistoricoMixado();
+            let csv = "Data;Descricao;Valor;Categoria;Tipo;Metodo;Status\n";
+            mix.forEach(m => {
+                let data = m.data;
+                let desc = m.desc.replace(/;/g, ',');
+                let valor = parseFloat(m.valor).toFixed(2).replace('.', ',');
+                let cat = m.categoria || '';
+                let tipo = m._tipoObj || '';
+                let met = m.metodo || '';
+                let status = m.statusPagamento || '';
+                csv += `${data};${desc};${valor};${cat};${tipo};${met};${status}\n`;
+            });
+            let blob = new Blob(["\uFEFF" + csv], {type: 'text/csv;charset=utf-8;'});
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = `movimentacoes-${hojeInput()}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function restaurarBackup(event) {
+            let file = event.target.files[0];
+            if(!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let backup = JSON.parse(e.target.result);
+                    if(backup.version && backup.data) {
+                        if(confirm(t('restoreConfirm'))) {
+                            for(let key in backup.data) {
+                                let val = backup.data[key];
+                                localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : val);
+                            }
+                            alert(t('restoreSuccess'));
+                            carregarDados();
+                        }
+                    } else {
+                        alert(t('restoreInvalid'));
+                    }
+                } catch(err) {
+                    alert(t('restoreInvalid'));
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+
+        // ==== LÓGICA DE DADOS PRINCIPAIS ====
+        let gastos = [], parcelamentos = [], despesasFixas = [], ganhosMensais = {}, fixosPagos = {}, investimentos = [];
+        let recorrencias = [], orcamentos = {};
+        let idGanhoSendoEditado = null, idInvestimentoAtual = null, currentMovAction = null, idRecorrenteEditando = null;
+
+        function obterMesAtual() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+        function obterMesAnterior(mesStr) {
+            let [ano, mes] = mesStr.split('-');
+            mes = parseInt(mes) - 1; ano = parseInt(ano);
+            if (mes === 0) { mes = 12; ano--; }
+            return `${ano}-${String(mes).padStart(2, '0')}`;
+        }
+        function hojeInput() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+        
+        function parsePtBrDate(str) {
+            if(!str) return new Date();
+            if(str.includes('-')) { const p = str.split('-'); return new Date(p[0], p[1]-1, p[2]); }
+            const p = str.split('/'); return p.length === 3 ? new Date(p[2], p[1]-1, p[0]) : new Date();
+        }
+        function toPtBrString(dateObj) { return dateObj.toLocaleDateString('pt-BR'); }
+
+        function pertenceAoMesAtual(dataStr, mesAtualKey) {
+            if (!dataStr) return false;
+            if (dataStr.includes('/')) { const p = dataStr.split('/'); return p.length === 3 && `${p[2]}-${p[1].padStart(2,'0')}` === mesAtualKey; }
+            if (dataStr.includes('-')) return dataStr.startsWith(mesAtualKey); return false;
+        }
+
+        function carregarDados() {
+            gastos = JSON.parse(localStorage.getItem('financas_gastos')) || [];
+            parcelamentos = JSON.parse(localStorage.getItem('financas_parcelas')) || [];
+            despesasFixas = JSON.parse(localStorage.getItem('financas_fixos')) || [];
+            ganhosMensais = JSON.parse(localStorage.getItem('financas_ganhos_mensal')) || {};
+            fixosPagos = JSON.parse(localStorage.getItem('financas_fixos_pagos')) || {};
+            recorrencias = JSON.parse(localStorage.getItem('financas_recorrencias')) || [];
+            orcamentos = JSON.parse(localStorage.getItem('financas_orcamentos')) || {};
+            
+            parcelamentos = parcelamentos.map(p => { p.total = parseFloat(p.total); p.qtd = parseInt(p.qtd); p.pagas = parseInt(p.pagas) || 0; return p; });
+
+            let invsBrutos = JSON.parse(localStorage.getItem('financas_investimentos')) || [];
+            investimentos = invsBrutos.map(inv => {
+                if (typeof inv.meta === 'undefined') inv.meta = 0;
+                if (!inv.rentabilidadeTipo) { inv.rentabilidadeTipo = 'nenhuma'; inv.rentabilidadeValor = 0; }
+                if (!inv.historico || !Array.isArray(inv.historico)) {
+                    inv.dataInicio = toPtBrString(new Date()); inv.historico = [{ id: Date.now()+Math.random(), tipo: "entrada", valor: inv.valor, data: inv.dataInicio, desc: "Migração automática" }];
+                } else if (!inv.dataInicio && inv.historico.length > 0) { inv.dataInicio = inv.historico[0].data; }
+                return inv;
+            });
+
+            gerarContasRecorrentes();
+            renderizarTela();
+        }
+
+        function salvarDados() {
+            localStorage.setItem('financas_gastos', JSON.stringify(gastos)); 
+            localStorage.setItem('financas_parcelas', JSON.stringify(parcelamentos)); 
+            localStorage.setItem('financas_fixos', JSON.stringify(despesasFixas)); 
+            localStorage.setItem('financas_ganhos_mensal', JSON.stringify(ganhosMensais)); 
+            localStorage.setItem('financas_fixos_pagos', JSON.stringify(fixosPagos)); 
+            localStorage.setItem('financas_investimentos', JSON.stringify(investimentos));
+            localStorage.setItem('financas_recorrencias', JSON.stringify(recorrencias));
+            localStorage.setItem('financas_orcamentos', JSON.stringify(orcamentos));
+            renderizarTela();
+        }
+
+        // ==========================================
+        // MOTOR DE CONTAS RECORRENTES
+        // ==========================================
+        function gerarContasRecorrentes() {
+            const mesAtualStr = obterMesAtual(); // YYYY-MM
+            let houveAlteracao = false;
+            
+            recorrencias.forEach(r => {
+                if(r.status === 'pausado') return;
+
+                let [anoI, mesI] = r.dataInicio.split('-');
+                let dataAtual = new Date(anoI, mesI - 1, 1);
+                
+                const limite = r.dataTermino ? r.dataTermino : mesAtualStr;
+                const limiteDate = new Date(limite.split('-')[0], limite.split('-')[1] - 1, 1);
+                const agoraDate = new Date(mesAtualStr.split('-')[0], mesAtualStr.split('-')[1] - 1, 1);
+
+                const targetDate = limiteDate < agoraDate ? limiteDate : agoraDate;
+
+                while(dataAtual <= targetDate) {
+                    let mesStr = `${dataAtual.getFullYear()}-${String(dataAtual.getMonth()+1).padStart(2, '0')}`;
+                    let existe = gastos.find(g => g._recorrenciaId === r.id && g._mesRef === mesStr);
+                    if(!existe) {
+                        let d = parseInt(r.vencimento);
+                        let maxDays = new Date(dataAtual.getFullYear(), dataAtual.getMonth()+1, 0).getDate();
+                        if(d > maxDays) d = maxDays;
+                        
+                        let dateStr = `${String(d).padStart(2,'0')}/${String(dataAtual.getMonth()+1).padStart(2,'0')}/${dataAtual.getFullYear()}`;
+
+                        gastos.unshift({
+                            id: Date.now() + Math.random(),
+                            desc: r.nome, valor: parseFloat(r.valor), metodo: r.metodo, categoria: r.categoria,
+                            data: dateStr, _isRecorrente: true, _recorrenciaId: r.id, _mesRef: mesStr, statusPagamento: 'pendente'
+                        });
+                        houveAlteracao = true;
+                    }
+                    dataAtual.setMonth(dataAtual.getMonth() + 1);
+                }
+            });
+            if(houveAlteracao) localStorage.setItem('financas_gastos', JSON.stringify(gastos));
+        }
+
+        function abrirModalRecorrente(id = null) {
+            idRecorrenteEditando = id;
+            if(id) {
+                const r = recorrencias.find(x => x.id === id);
+                if(r) {
+                    document.getElementById('rec-titulo').innerText = 'Editar Recorrente';
+                    document.getElementById('rec-nome').value = r.nome;
+                    document.getElementById('rec-valor').value = r.valor;
+                    document.getElementById('rec-categoria').value = r.categoria;
+                    document.getElementById('rec-metodo').value = r.metodo;
+                    document.getElementById('rec-venc').value = r.vencimento;
+                    document.getElementById('rec-inicio').value = r.dataInicio;
+                    document.getElementById('rec-termino').value = r.dataTermino || '';
+                }
+            } else {
+                document.getElementById('rec-titulo').innerText = t('newRecurring');
+                document.getElementById('rec-nome').value = '';
+                document.getElementById('rec-valor').value = '';
+                document.getElementById('rec-categoria').value = 'Mercado';
+                document.getElementById('rec-metodo').value = 'Pix';
+                document.getElementById('rec-venc').value = '';
+                document.getElementById('rec-inicio').value = obterMesAtual();
+                document.getElementById('rec-termino').value = '';
+            }
+            document.getElementById('recorrente-modal').style.display = 'flex';
+        }
+
+        function fecharModalRecorrente() { document.getElementById('recorrente-modal').style.display = 'none'; }
+
+        function salvarRecorrente() {
+            const nome = document.getElementById('rec-nome').value.trim();
+            const val = parseFloat(document.getElementById('rec-valor').value);
+            const cat = document.getElementById('rec-categoria').value;
+            const met = document.getElementById('rec-metodo').value;
+            const venc = parseInt(document.getElementById('rec-venc').value);
+            const inicio = document.getElementById('rec-inicio').value;
+            const termino = document.getElementById('rec-termino').value;
+
+            if(!nome || !val || !venc || !inicio) return;
+
+            if(idRecorrenteEditando) {
+                let r = recorrencias.find(x => x.id === idRecorrenteEditando);
+                if(r) { r.nome = nome; r.valor = val; r.categoria = cat; r.metodo = met; r.vencimento = venc; r.dataInicio = inicio; r.dataTermino = termino; }
+            } else {
+                recorrencias.push({ id: Date.now(), nome: nome, valor: val, categoria: cat, metodo: met, vencimento: venc, dataInicio: inicio, dataTermino: termino, status: 'ativo' });
+            }
+            fecharModalRecorrente();
+            gerarContasRecorrentes();
+            salvarDados();
+        }
+
+        function deletarRecorrente(id) {
+            if(confirm(t('delete') + "? O histórico antigo será preservado.")) {
+                recorrencias = recorrencias.filter(r => r.id !== id);
+                salvarDados();
+            }
+        }
+
+        function toggleStatusRecorrente(id) {
+            let r = recorrencias.find(x => x.id === id);
+            if(r) { r.status = r.status === 'ativo' ? 'pausado' : 'ativo'; if(r.status === 'ativo') gerarContasRecorrentes(); salvarDados(); }
+        }
+
+        function marcarComoPagoGasto(id) { let g = gastos.find(x => x.id === id); if(g) { g.statusPagamento = 'pago'; salvarDados(); } }
+
+
+        // ==========================================
+        // NOVA FUNCIONALIDADE 1: CALENDÁRIO FINANCEIRO
+        // ==========================================
+        let calDataAtual = new Date(); 
+        let calDiaSelecionado = null;
+
+        function mudarMesCalendario(delta) {
+            calDataAtual.setMonth(calDataAtual.getMonth() + delta);
+            renderizarCalendario();
+        }
+
+        function renderizarCalendario() {
+            const ano = calDataAtual.getFullYear();
+            const mes = calDataAtual.getMonth();
+            const mesKey = `${ano}-${String(mes + 1).padStart(2, '0')}`;
+            
+            const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            document.getElementById('cal-mes-ano').innerText = `${t(nomesMeses[mes].toLowerCase().substring(0,3))} ${ano}`;
+
+            let primeiroDia = new Date(ano, mes, 1).getDay();
+            let numDias = new Date(ano, mes + 1, 0).getDate();
+
+            let eventosMes = {};
+            for(let i=1; i<=31; i++) eventosMes[i] = { ganhos: 0, gastos: 0, itens: [] };
+
+            let totalEntradas = 0, totalSaidas = 0;
+            
+            // Entradas previstas (Mapeados para o dia 1)
+            (ganhosMensais[mesKey] || []).forEach(g => {
+                eventosMes[1].itens.push({ tipo: 'ganho', desc: g.desc, valor: parseFloat(g.valor) });
+                eventosMes[1].ganhos += parseFloat(g.valor);
+                totalEntradas += parseFloat(g.valor);
+            });
+
+            // Contas e gastos previstos/recorrentes
+            gastos.forEach(g => {
+                if (pertenceAoMesAtual(g.data, mesKey)) {
+                    let d = parseInt(g.data.split('/')[0]);
+                    eventosMes[d].itens.push({ tipo: 'gasto', desc: g.desc, valor: parseFloat(g.valor), status: g.statusPagamento });
+                    eventosMes[d].gastos += parseFloat(g.valor);
+                    totalSaidas += parseFloat(g.valor);
+                }
+            });
+
+            // Fixos
+            const idsPagos = fixosPagos[mesKey] || [];
+            despesasFixas.forEach(f => {
+                let d = parseInt(f.vencimento) || 1;
+                if(d > numDias) d = numDias;
+                let isPago = idsPagos.includes(f.id);
+                eventosMes[d].itens.push({ tipo: 'fixo', desc: f.nome, valor: parseFloat(f.valor), status: isPago ? 'pago' : 'pendente' });
+                totalSaidas += parseFloat(f.valor);
+                eventosMes[d].gastos += parseFloat(f.valor);
+            });
+
+            // Parcelas
+            parcelamentos.forEach(p => {
+                let isPago = idsPagos.includes(p.id);
+                let faltam = parseInt(p.qtd) - parseInt(p.pagas);
+                if (faltam > 0 || isPago) {
+                    let d = parseInt(p.venc) || 1;
+                    if(d > numDias) d = numDias;
+                    let parcelaAtualIdx = parseInt(p.pagas) + (isPago ? 0 : 1);
+                    if(parcelaAtualIdx > p.qtd) parcelaAtualIdx = p.qtd;
+                    let val = calcValorParcela(p, parcelaAtualIdx);
+                    eventosMes[d].itens.push({ tipo: 'parcela', desc: p.desc, valor: parseFloat(val), status: isPago ? 'pago' : 'pendente' });
+                    totalSaidas += parseFloat(val);
+                    eventosMes[d].gastos += parseFloat(val);
+                }
+            });
+
+            document.getElementById('cal-resumo-entradas').innerText = `R$ ${totalEntradas.toFixed(2)}`;
+            document.getElementById('cal-resumo-saidas').innerText = `R$ ${totalSaidas.toFixed(2)}`;
+            let proj = totalEntradas - totalSaidas;
+            let elProj = document.getElementById('cal-resumo-saldo');
+            elProj.innerText = `R$ ${proj.toFixed(2)}`;
+            elProj.style.color = proj >= 0 ? 'var(--success)' : 'var(--danger)';
+
+            const grid = document.getElementById('calendar-days-container');
+            grid.innerHTML = '';
+            
+            for(let i=0; i<primeiroDia; i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
+
+            let hoje = new Date();
+            let isCurrentMonth = hoje.getFullYear() === ano && hoje.getMonth() === mes;
+            
+            for(let d=1; d<=numDias; d++) {
+                let ev = eventosMes[d];
+                let dots = '';
+                if(ev.ganhos > 0) dots += `<div class="cal-dot green"></div>`;
+                if(ev.gastos > 0) dots += `<div class="cal-dot red"></div>`;
+                let pendentes = ev.itens.some(i => i.status === 'pendente');
+                if(pendentes) dots += `<div class="cal-dot warning"></div>`;
+
+                let cls = 'cal-day';
+                if(isCurrentMonth && d === hoje.getDate()) cls += ' today';
+                if(calDiaSelecionado === d) cls += ' active';
+
+                grid.innerHTML += `
+                    <div class="${cls}" onclick="selecionarDiaCalendario(${d})">
+                        <span class="day-num">${d}</span>
+                        <div class="cal-dots">${dots}</div>
+                    </div>
+                `;
+            }
+
+            window._eventosMes = eventosMes;
+
+            if(calDiaSelecionado === null && isCurrentMonth) selecionarDiaCalendario(hoje.getDate());
+            else if(calDiaSelecionado !== null && calDiaSelecionado <= numDias) selecionarDiaCalendario(calDiaSelecionado);
+            else selecionarDiaCalendario(1);
+        }
+
+        function selecionarDiaCalendario(dia) {
+            calDiaSelecionado = dia;
+            let evs = window._eventosMes;
+            if(!evs) return;
+            let ev = evs[dia];
+            
+            document.querySelectorAll('.cal-day').forEach(el => el.classList.remove('active'));
+            let validDays = document.querySelectorAll('.cal-day:not(.empty)');
+            if(validDays[dia-1]) validDays[dia-1].classList.add('active');
+
+            let lista = document.getElementById('lista-eventos-calendario');
+            let dataFormatada = `${String(dia).padStart(2,'0')}/${String(calDataAtual.getMonth()+1).padStart(2,'0')}/${calDataAtual.getFullYear()}`;
+            document.getElementById('cal-dia-selecionado-titulo').innerText = `${t('upcomingEvents')} - ${dataFormatada}`;
+
+            lista.innerHTML = '';
+            if(ev.itens.length === 0) {
+                lista.innerHTML = `<p style="text-align:center; font-size:0.85rem; color:var(--text-muted); padding: 20px;">Nenhum evento neste dia.</p>`;
+                return;
+            }
+
+            ev.itens.forEach(i => {
+                let isEntrada = i.tipo === 'ganho';
+                let icone = isEntrada ? '💰' : '💸';
+                let cor = isEntrada ? 'green' : 'red';
+                let sinal = isEntrada ? '+' : '-';
+                let statusText = '';
+                if(i.status === 'pendente') statusText = `<span style="color:var(--warning); font-size: 0.7rem; font-weight:bold; margin-left: 5px;">[PENDENTE]</span>`;
+                if(i.status === 'pago') statusText = `<span style="color:var(--success); font-size: 0.7rem; font-weight:bold; margin-left: 5px;">[PAGO]</span>`;
+
+                lista.innerHTML += `
+                    <li class="item-card glass" style="padding: 12px 15px;">
+                        <div class="item-info">
+                            <h4 style="font-size:0.95rem;">${icone} ${i.desc} ${statusText}</h4>
+                        </div>
+                        <div class="item-value-area">
+                            <div class="item-value ${cor}" style="font-size:0.95rem;">${sinal}R$ ${i.valor.toFixed(2)}</div>
+                        </div>
+                    </li>
+                `;
+            });
+        }
+
+
+        // ==========================================
+        // ORÇAMENTOS POR CATEGORIA
+        // ==========================================
+        function abrirModalOrcamentos() {
+            const container = document.getElementById('orcamentos-inputs-container');
+            container.innerHTML = '';
+            categoriasPadrao.forEach(cat => {
+                let val = orcamentos[cat] || '';
+                container.innerHTML += `<div class="form-row" style="align-items: center; margin-bottom: 10px;"><div style="flex:1; text-align: left; font-size: 0.9rem; color: var(--text-main);">${t(cat)||cat}</div><div style="flex:1;"><input type="number" id="orc-${cat}" class="input-glass" style="margin-bottom:0; padding: 10px;" placeholder="Sem limite" value="${val}" step="0.01"></div></div>`;
+            });
+            document.getElementById('orcamentos-modal').style.display = 'flex';
+        }
+
+        function fecharModalOrcamentos() { document.getElementById('orcamentos-modal').style.display = 'none'; }
+
+        function salvarOrcamentos() {
+            categoriasPadrao.forEach(cat => {
+                let val = parseFloat(document.getElementById(`orc-${cat}`).value);
+                if(!isNaN(val) && val > 0) { orcamentos[cat] = val; } else { delete orcamentos[cat]; }
+            });
+            fecharModalOrcamentos(); salvarDados();
+        }
+
+
+        // ==== ORQUESTRAÇÃO FINANCEIRA GERAL ====
+        function calcularRentabilidade(inv) {
+            const tx = TaxasAPI.obter(); let taxaAnual = 0; const tipo = inv.rentabilidadeTipo || 'nenhuma'; const val = parseFloat(inv.rentabilidadeValor) || 0;
+            if (tipo === 'cdi') taxaAnual = tx.cdi * (val / 100); else if (tipo === 'selic') taxaAnual = tx.selic * (val / 100); else if (tipo === 'ipca') taxaAnual = tx.ipca + val; else if (tipo === 'poupanca') taxaAnual = tx.poupanca; else if (tipo === 'fixa') taxaAnual = val;
+            const txDiaria = Math.pow(1 + (taxaAnual / 100), 1 / 365) - 1; let saldoReal = 0; let saldoComRend = 0; let dataAnterior = null;
+            const histOrd = (inv.historico || []).slice().sort((a,b) => parsePtBrDate(a.data) - parsePtBrDate(b.data));
+
+            histOrd.forEach(h => {
+                const dataEvento = parsePtBrDate(h.data);
+                if (dataAnterior && taxaAnual > 0) { const dias = (dataEvento - dataAnterior) / 86400000; if (dias > 0) saldoComRend *= Math.pow(1 + txDiaria, dias); }
+                const v = parseFloat(h.valor);
+                if (h.tipo === 'entrada') { saldoReal += v; saldoComRend += v; } else if (h.tipo === 'retirada') { saldoReal -= v; saldoComRend -= v; }
+                dataAnterior = dataEvento;
+            });
+            if (dataAnterior && taxaAnual > 0) { const hoje = new Date(); hoje.setHours(0,0,0,0); const ultima = new Date(dataAnterior); ultima.setHours(0,0,0,0); const dias = (hoje - ultima) / 86400000; if (dias > 0) saldoComRend *= Math.pow(1 + txDiaria, dias); }
+            if (saldoReal < 0) saldoReal = 0; if (saldoComRend < 0) saldoComRend = 0;
+            let rendimentoEst = saldoComRend - saldoReal; if (rendimentoEst < 0) rendimentoEst = 0;
+            return { saldoBase: saldoReal, saldoComRendimento: saldoComRend, rendimentoEstimado: rendimentoEst, taxaAnualResultante: taxaAnual };
+        }
+
+        function formatarRentStr(inv) {
+            const ty = inv.rentabilidadeTipo || 'nenhuma'; const v = parseFloat(inv.rentabilidadeValor) || 0;
+            if (ty === 'cdi') return `${v}% CDI`; if (ty === 'selic') return `${v}% Selic`; if (ty === 'ipca') return `IPCA + ${v}%`; if (ty === 'poupanca') return t('savingsRate'); if (ty === 'fixa') return `${v}% a.a.`; return t('noYield');
+        }
+
+        function calcularTotaisDoMes(mesKey) {
+            const idsPagos = fixosPagos[mesKey] || [];
+            let ganhos = 0; (ganhosMensais[mesKey] || []).forEach(g => { ganhos += converterParaCentavos(g.valor); });
+            let gastosC = 0; gastos.forEach(g => { if (pertenceAoMesAtual(g.data, mesKey)) gastosC += converterParaCentavos(g.valor); });
+            let fixosP = 0; despesasFixas.forEach(f => { if (idsPagos.includes(f.id)) fixosP += converterParaCentavos(f.valor); });
+            let parcelasP = 0; parcelamentos.forEach(p => { if (idsPagos.includes(p.id)) { parcelasP += converterParaCentavos(calcValorParcela(p, p.pagas)); } });
+            
+            const gastosEfetivos = gastosC + fixosP + parcelasP;
+            return { ganhos: converterDeCentavos(ganhos), gastos: converterDeCentavos(gastosEfetivos), saldo: converterDeCentavos(ganhos - gastosEfetivos) };
+        }
+
+        function formatTrend(valAtual, valAnterior) {
+            if (valAnterior === 0 && valAtual === 0) return '<span class="trend neutral">-</span>';
+            if (valAnterior === 0) return `<span class="trend up">↑ 100%</span>`;
+            let pct = ((valAtual - valAnterior) / valAnterior) * 100;
+            if (pct > 0) return `<span class="trend up">↑ ${pct.toFixed(1)}%</span>`;
+            if (pct < 0) return `<span class="trend down">↓ ${Math.abs(pct).toFixed(1)}%</span>`;
+            return '<span class="trend neutral">-</span>';
+        }
+
+        function obterHistoricoMixado() {
+            let mix = [];
+            gastos.forEach(g => { mix.push({ ...g, _tipoObj: 'gasto', _dataObj: parsePtBrDate(g.data), _source: 'gasto' }); });
+            for (let m in ganhosMensais) {
+                let [ano, mes] = m.split('-');
+                ganhosMensais[m].forEach(g => {
+                    let dateObj = new Date(parseInt(ano), parseInt(mes)-1, 1);
+                    mix.push({ id: g.id, desc: g.desc, valor: g.valor, categoria: 'Receita', metodo: 'N/A', data: toPtBrString(dateObj), _tipoObj: 'entrada', _dataObj: dateObj, _source: 'ganho' });
+                });
+            }
+            investimentos.forEach(inv => {
+                if(inv.historico) { inv.historico.forEach(h => { mix.push({ id: h.id, desc: `${inv.nome} - ${h.desc}`, valor: h.valor, categoria: 'Investimento', metodo: 'N/A', data: h.data, _tipoObj: h.tipo === 'entrada' ? 'investimento' : 'resgate', _dataObj: parsePtBrDate(h.data), _source: 'investimento' }); }); }
+            });
+            mix.sort((a,b) => b._dataObj - a._dataObj);
+            return mix;
+        }
+
+        function inicializarFiltros() {
+            historicoCompletoCache = obterHistoricoMixado();
+            const anos = new Set(historicoCompletoCache.map(i => i._dataObj.getFullYear())); const selAno = document.getElementById('filtro-ano'); selAno.innerHTML = `<option value="todos">${t('allYears')}</option>`; Array.from(anos).sort((a,b)=>b-a).forEach(a => selAno.innerHTML += `<option value="${a}">${a}</option>`);
+            const categorias = new Set(historicoCompletoCache.map(i => i.categoria)); const selCat = document.getElementById('filtro-categoria'); selCat.innerHTML = `<option value="todos">${t('allCategories')}</option>`; Array.from(categorias).sort().forEach(c => selCat.innerHTML += `<option value="${c}">${t(c)||c}</option>`);
+            const metodos = new Set(historicoCompletoCache.map(i => i.metodo)); const selMet = document.getElementById('filtro-metodo'); selMet.innerHTML = `<option value="todos">${t('allMethods')}</option>`; Array.from(metodos).filter(m => m && m !== 'N/A').sort().forEach(m => selMet.innerHTML += `<option value="${m}">${t(m)||m}</option>`);
+            aplicarFiltros();
+        }
+
+        function toggleFiltrosAvancados() { const c = document.getElementById('filtros-avancados-container'); c.style.display = c.style.display === 'none' ? 'block' : 'none'; }
+
+        function limparFiltros() {
+            document.getElementById('filtro-busca').value = ''; document.getElementById('filtro-mes').value = 'todos'; document.getElementById('filtro-ano').value = 'todos'; document.getElementById('filtro-tipo').value = 'todos'; document.getElementById('filtro-categoria').value = 'todos'; document.getElementById('filtro-metodo').value = 'todos'; document.getElementById('filtro-val-min').value = ''; document.getElementById('filtro-val-max').value = '';
+            aplicarFiltros();
+        }
+
+        function aplicarFiltros() {
+            let ativos = 0;
+            const b = document.getElementById('filtro-busca').value.toLowerCase(); const m = document.getElementById('filtro-mes').value; const a = document.getElementById('filtro-ano').value; const tObj = document.getElementById('filtro-tipo').value; const c = document.getElementById('filtro-categoria').value; const met = document.getElementById('filtro-metodo').value; const vmin = parseFloat(document.getElementById('filtro-val-min').value); const vmax = parseFloat(document.getElementById('filtro-val-max').value);
+            if(b) ativos++; if(m !== 'todos') ativos++; if(a !== 'todos') ativos++; if(tObj !== 'todos') ativos++; if(c !== 'todos') ativos++; if(met !== 'todos') ativos++; if(!isNaN(vmin)) ativos++; if(!isNaN(vmax)) ativos++;
+            const badge = document.getElementById('filtros-badge'); if(ativos > 0) { badge.style.display = 'inline-block'; badge.innerText = ativos; } else { badge.style.display = 'none'; }
+
+            let filtrados = historicoCompletoCache.filter(item => {
+                if(b && !item.desc.toLowerCase().includes(b) && !(item.categoria.toLowerCase().includes(b))) return false;
+                if(m !== 'todos' && item._dataObj.getMonth().toString() !== m) return false;
+                if(a !== 'todos' && item._dataObj.getFullYear().toString() !== a) return false;
+                if(tObj !== 'todos') { if(tObj === 'entrada' && item._tipoObj !== 'entrada') return false; if(tObj === 'gasto' && item._tipoObj !== 'gasto') return false; if(tObj === 'investimento' && item._tipoObj !== 'investimento' && item._tipoObj !== 'resgate') return false; }
+                if(c !== 'todos' && item.categoria !== c) return false;
+                if(met !== 'todos' && item.metodo !== met) return false;
+                if(!isNaN(vmin) && parseFloat(item.valor) < vmin) return false;
+                if(!isNaN(vmax) && parseFloat(item.valor) > vmax) return false;
+                return true;
+            });
+
+            renderizarHistoricoFiltrado(filtrados);
+        }
+
+        function renderizarHistoricoFiltrado(lista) {
+            const ul = document.getElementById('lista-historico-filtrado'); const resumo = document.getElementById('filtros-resumo'); ul.innerHTML = '';
+            if(lista.length === 0) { resumo.style.display = 'none'; ul.innerHTML = `<p style="text-align:center; font-size:0.85rem; color:var(--text-muted); padding: 20px;">${t('noResults')}<br>${t('tryClearFilters')}</p>`; return; }
+
+            let totEnt = 0, totGast = 0, totInv = 0; let html = '';
+            lista.forEach(m => {
+                let val = parseFloat(m.valor); let icone = '💸'; let cor = 'red'; let sinal = '-';
+                if (m._tipoObj === 'entrada') { icone = '💰'; cor = 'green'; sinal = '+'; totEnt += val; } else if (m._tipoObj === 'investimento') { icone = '🛡️'; cor = 'secondary'; sinal = ''; totInv += val; } else if (m._tipoObj === 'resgate') { icone = '📉'; cor = 'green'; sinal = '+'; totEnt += val; } else { totGast += val; }
+                
+                let metStr = (m.metodo && m.metodo !== 'N/A') ? ` | ${t(m.metodo)||m.metodo}` : '';
+                let actionHtml = ''; let statusTag = '';
+                if(m._source === 'gasto') {
+                    if(m.statusPagamento === 'pendente') { statusTag = `<span style="color: var(--warning); font-weight: bold; font-size: 0.75rem; margin-left: 5px;">[PENDENTE]</span>`; actionHtml = `<button class="btn-small pay" onclick="marcarComoPagoGasto(${m.id})">✓ ${t('markAsPaid')}</button>`; }
+                    actionHtml += `<button class="btn-small del" onclick="deletarGasto(${m.id})">${t('delete')}</button>`;
+                } else if (m._source === 'ganho') { actionHtml = `<button class="btn-small del" onclick="excluirGanho(${m.id})">${t('delete')}</button>`; }
+
+                html += `<li class="item-card glass" style="flex-direction: column; align-items: stretch; padding: 12px 15px;"><div style="display: flex; justify-content: space-between; margin-bottom: 5px;"><div class="item-info"><h4 style="font-size:0.9rem;">${icone} ${m.desc} ${statusTag}</h4><p style="font-size:0.75rem;">${m.data} | ${t(m.categoria)||m.categoria}${metStr}</p></div><div class="item-value-area"><div class="item-value ${cor}" style="font-size:0.95rem;">${sinal}R$ ${formatarMoeda(val)}</div></div></div>${actionHtml !== '' ? `<div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--glass-border); padding-top: 8px; margin-top: 5px; gap: 5px;">${actionHtml}</div>` : ''}</li>`;
+            });
+            ul.innerHTML = html; resumo.style.display = 'block';
+            resumo.innerHTML = `<div style="display:flex; flex-direction:column; gap: 4px; background: rgba(128,128,128,0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--glass-border);"><div style="font-weight:bold; color: var(--text-main); margin-bottom: 4px;">${t('foundTransactions', {n: lista.length})}</div><div style="display:flex; justify-content: space-between;"><span>${t('totalEntries')}:</span> <span style="color:var(--success);">R$ ${formatarMoeda(totEnt)}</span></div><div style="display:flex; justify-content: space-between;"><span>${t('totalExpenses')}:</span> <span style="color:var(--danger);">R$ ${formatarMoeda(totGast)}</span></div><div style="display:flex; justify-content: space-between;"><span>${t('totalInvestments')}:</span> <span style="color:var(--secondary);">R$ ${formatarMoeda(totInv)}</span></div></div>`;
+        }
+
+        // ==== RENDERIZAÇÃO DE TELA (MAIN) ====
+        function renderizarTela() {
+            const mesAtual = obterMesAtual(); const mesAnterior = obterMesAnterior(mesAtual); const idsPagosNoMes = fixosPagos[mesAtual] || [];
+            const totaisAtual = calcularTotaisDoMes(mesAtual); const totaisAnterior = calcularTotaisDoMes(mesAnterior);
+            
+            let totalEstimadoInv = 0, totalFixa = 0, totalVar = 0;
+            investimentos.forEach(inv => { const calc = calcularRentabilidade(inv); totalEstimadoInv += calc.saldoComRendimento; if (inv.tipo === "Renda Fixa") totalFixa += calc.saldoComRendimento; if (inv.tipo === "Renda Variável") totalVar += calc.saldoComRendimento; });
+            const patrimonioTotal = totaisAtual.saldo + totalEstimadoInv;
+
+            document.getElementById('header-saldo-min').innerText = formatarMoeda(totaisAtual.saldo);
+            document.getElementById('dash-patrimonio').innerText = formatarMoeda(patrimonioTotal); document.getElementById('dash-saldo').innerText = formatarMoeda(totaisAtual.saldo); document.getElementById('dash-ganhos').innerText = formatarMoeda(totaisAtual.ganhos); document.getElementById('dash-gastos').innerText = formatarMoeda(totaisAtual.gastos); document.getElementById('dash-investimentos').innerText = formatarMoeda(totalEstimadoInv);
+
+            document.getElementById('dash-ganhos-trend').innerHTML = formatTrend(totaisAtual.ganhos, totaisAnterior.ganhos); document.getElementById('dash-gastos-trend').innerHTML = formatTrend(totaisAtual.gastos, totaisAnterior.gastos); document.getElementById('dash-saldo-trend').innerHTML = formatTrend(totaisAtual.saldo, totaisAnterior.saldo);
+            
+            let deltaMes = totaisAtual.ganhos - totaisAtual.gastos;
+            if (deltaMes !== 0 || totalEstimadoInv > 0) { let patAnteriorAprox = patrimonioTotal - deltaMes; document.getElementById('dash-patrimonio-trend').innerHTML = formatTrend(patrimonioTotal, patAnteriorAprox); } else { document.getElementById('dash-patrimonio-trend').innerHTML = '<span class="trend neutral">-</span>'; }
+
+            const isInicio = document.getElementById('tab-gastos').classList.contains('active');
+            const boxGanhos = document.getElementById('lista-ganhos-container'); const listaGanhos = document.getElementById('lista-ganhos');
+            if (isInicio && (ganhosMensais[mesAtual] || []).length > 0) { boxGanhos.style.display = 'block'; listaGanhos.innerHTML = ''; ganhosMensais[mesAtual].forEach(g => { listaGanhos.innerHTML += `<li class="item-card glass"><div class="item-info"><h4 style="color: var(--success);">💰 ${g.desc}</h4></div><div class="item-value-area"><div class="item-value" style="color: var(--success); margin-bottom: 5px;">R$ ${formatarMoeda(g.valor)}</div><button class="btn-small outline" onclick="prepararEdicaoGanho(${g.id})">${t('edit')}</button> <button class="btn-small del" onclick="excluirGanho(${g.id})">${t('delete')}</button></div></li>`; }); } else boxGanhos.style.display = 'none';
+
+            let categoriasGastosMes = {}; let totalGastosCat = 0;
+            gastos.forEach(g => { if(pertenceAoMesAtual(g.data, mesAtual)) { const c = g.categoria; if(!categoriasGastosMes[c]) categoriasGastosMes[c] = 0; categoriasGastosMes[c] += parseFloat(g.valor); totalGastosCat += parseFloat(g.valor); } });
+
+            const catContainer = document.getElementById('dash-categorias-container'); const catList = document.getElementById('dash-categorias-list');
+            if (totalGastosCat > 0) { catContainer.style.display = 'block'; let catHtml = ''; const cores = ['#2ed573', '#1e90ff', '#ffa502', '#ff4757', '#a4b0be', '#9b59b6']; let corIdx = 0; Object.keys(categoriasGastosMes).sort((a,b)=>categoriasGastosMes[b]-categoriasGastosMes[a]).forEach(cat => { let pct = (categoriasGastosMes[cat] / totalGastosCat) * 100; let cor = cores[corIdx % cores.length]; corIdx++; catHtml += `<div class="cat-bar-wrap"><div class="cat-bar-head"><span>${t(cat)||cat}</span><span>R$ ${formatarMoeda(categoriasGastosMes[cat])} (${pct.toFixed(0)}%)</span></div><div class="cat-bar-bg"><div class="cat-bar-fill" style="width: ${pct}%; background-color: ${cor};"></div></div></div>`; }); catList.innerHTML = catHtml; } else { catContainer.style.display = 'none'; }
+
+            const listOrc = document.getElementById('dash-orcamentos-list'); let hasBudget = false; let orcHtml = '';
+            for(let cat in orcamentos) { let limite = parseFloat(orcamentos[cat]); if(limite > 0) { hasBudget = true; let gasto = categoriasGastosMes[cat] || 0; let pct = (gasto / limite) * 100; let cor = 'var(--secondary)'; let aviso = ''; let rest = limite - gasto; if(pct >= 70 && pct <= 90) { cor = 'var(--warning)'; aviso = t('budgetWarning'); } else if(pct > 90 && pct <= 100) { cor = 'var(--danger)'; aviso = t('budgetNearLimit'); } else if(pct > 100) { cor = 'var(--danger)'; aviso = `${t('budgetExceeded')} R$ ${formatarMoeda(Math.abs(rest))}`; rest = 0; } let barPct = Math.min(pct, 100); orcHtml += `<div class="cat-bar-wrap" style="margin-bottom: 20px;"><div class="cat-bar-head"><span style="font-weight: 600;">${t(cat)||cat}</span><span style="color: ${pct>100?'var(--danger)':'var(--text-main)'};">R$ ${formatarMoeda(gasto)} / R$ ${formatarMoeda(limite)}</span></div><div class="cat-bar-bg" style="height: 10px; background: rgba(128,128,128,0.2);"><div class="cat-bar-fill" style="width: ${barPct}%; background: ${cor};"></div></div><div style="display:flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;"><span>${pct.toFixed(1)}% utilizado</span><span>${aviso ? `<strong style="color:${cor};">${aviso}</strong>` : `Restante: R$ ${formatarMoeda(rest)}`}</span></div></div>`; } }
+            if(hasBudget) { listOrc.innerHTML = orcHtml; } else { listOrc.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 10px;">${t('noBudget')}</p>`; }
+
+            const metasContainer = document.getElementById('dash-metas-container'); const metasList = document.getElementById('dash-metas-list'); let metasHtml = '';
+            investimentos.forEach(inv => { if(inv.meta && parseFloat(inv.meta) > 0) { const calc = calcularRentabilidade(inv); let pct = Math.min((calc.saldoComRendimento / parseFloat(inv.meta)) * 100, 100); metasHtml += `<div class="cat-bar-wrap"><div class="cat-bar-head"><span>🎯 ${inv.nome}</span><span>${pct.toFixed(1)}%</span></div><div class="cat-bar-bg" style="height: 6px;"><div class="cat-bar-fill" style="width: ${pct}%; background: linear-gradient(90deg, var(--primary), var(--secondary));"></div></div></div>`; } });
+            if (metasHtml !== '') { metasContainer.style.display = 'block'; metasList.innerHTML = metasHtml; } else { metasContainer.style.display = 'none'; }
+
+            let movsMix = []; gastos.forEach(g => movsMix.push({id: g.id, data: g.data, desc: g.desc, valor: g.valor, cat: g.categoria, isGasto: true, statusPagamento: g.statusPagamento}));
+            const listRecentes = document.getElementById('lista-recentes'); listRecentes.innerHTML = '';
+            movsMix.sort((a,b) => b.id - a.id); const ultimas5 = movsMix.slice(0, 5);
+            if(ultimas5.length > 0) { ultimas5.forEach(m => { let icone = m.isGasto ? '💸' : '💰'; let cor = m.isGasto ? 'red' : 'green'; let sinal = m.isGasto ? '-' : '+'; let statusTag = m.statusPagamento === 'pendente' ? `<span style="color: var(--warning); font-size: 0.7rem; font-weight: bold; margin-left: 4px;">[PENDENTE]</span>` : ''; listRecentes.innerHTML += `<li class="item-card glass" style="padding: 12px 15px;"><div class="item-info"><h4 style="font-size:0.9rem;">${icone} ${m.desc} ${statusTag}</h4><p style="font-size:0.75rem;">${m.data} | ${t(m.cat)||m.cat}</p></div><div class="item-value-area"><div class="item-value ${cor}" style="font-size:0.95rem;">${sinal}R$ ${formatarMoeda(m.valor)}</div></div></li>`; }); } else { listRecentes.innerHTML = `<p style="text-align:center; font-size:0.85rem; color:var(--text-muted);">Sem movimentações recentes.</p>`; }
+
+            if(document.getElementById('lista-gastos-wrapper').style.display !== 'none') { inicializarFiltros(); }
+
+            const listaParcelas = document.getElementById('lista-parcelas'); listaParcelas.innerHTML = '';
+            parcelamentos.forEach(p => {
+                const isPagoEsteMes = idsPagosNoMes.includes(p.id); const qtd = parseInt(p.qtd); const pagas = parseInt(p.pagas); const faltam = qtd - pagas; const totalCents = converterParaCentavos(p.total); let pagoCents = 0; for(let i=1; i<=pagas; i++) pagoCents += converterParaCentavos(calcValorParcela(p, i)); const saldoDevedor = converterDeCentavos(totalCents - pagoCents); let parcelaAtualIdx = pagas + (isPagoEsteMes ? 0 : 1); if (parcelaAtualIdx > qtd) parcelaAtualIdx = qtd; const valorParcelaAtual = calcValorParcela(p, parcelaAtualIdx); let statusHTML = ''; if (faltam === 0 && !isPagoEsteMes) statusHTML = `<span style="color: var(--success); font-weight: bold; font-size: 0.9rem;">${t('fullyPaid')}</span>`; else if (faltam === 0 && isPagoEsteMes) statusHTML = `<span style="color: var(--success); font-weight: bold; font-size: 0.9rem;">${t('fullyPaidThisMonth')}</span>`; else if (isPagoEsteMes) statusHTML = `<span style="color: var(--success); font-weight: bold; font-size: 0.85rem;">${t('paidThisMonth')}</span>`; else statusHTML = `<button class="btn-small pay" onclick="pagarParcela(${p.id})">+ ${t('payInstallment')}</button>`;
+                listaParcelas.innerHTML += `<li class="item-card glass" style="flex-direction: column; align-items: stretch;"><div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><div class="item-info"><h4>📱 ${p.desc}</h4><p style="color: var(--secondary); margin-top: 4px;">R$ ${formatarMoeda(valorParcelaAtual)} / parcela</p><p style="margin-top: 2px;">${t('installmentOf', {n: parcelaAtualIdx, total: qtd})}</p><p style="margin-top: 2px;">${t('remainingInstallments', {n: faltam})}</p></div><div class="item-value-area"><div style="font-size: 0.8rem; color: var(--text-muted);">${t('remainingTotal')}</div><div class="item-value" style="color: var(--danger);">R$ ${formatarMoeda(saldoDevedor)}</div><div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">${t('originalTotal')}: R$ ${formatarMoeda(p.total)}</div></div></div><div style="display: flex; justify-content: space-between; border-top: 1px solid var(--glass-border); padding-top: 10px;">${statusHTML}<button class="btn-small del" onclick="deletarParcela(${p.id})">${t('delete')}</button></div></li>`;
+            });
+
+            const listaFixos = document.getElementById('lista-fixos'); listaFixos.innerHTML = ''; let previsaoFixosCents = 0; const categoryEmojis = { "Moradia": "🏠", "Serviços": "⚡", "Assinaturas": "📺", "Transporte": "🚗", "Educação": "📚", "Saúde": "🩺", "Outros": "📦" };
+            despesasFixas.forEach(f => {
+                previsaoFixosCents += converterParaCentavos(f.valor); const emoji = categoryEmojis[f.categoria] || "💰"; const isPagoEsteMes = idsPagosNoMes.includes(f.id);
+                listaFixos.innerHTML += `<li class="item-card glass" style="flex-direction: column; align-items: stretch;"><div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><div class="item-info"><h4>${emoji} ${f.nome}</h4><p>${t(f.categoria)||f.categoria} | Venc. ${f.vencimento}</p><p style="margin-top: 4px;"><span style="font-weight: bold; color: ${isPagoEsteMes ? 'var(--success)' : 'var(--danger)'};">${isPagoEsteMes ? 'PAGO 🎉' : 'PENDENTE ⏳'}</span></p></div><div class="item-value-area"><div class="item-value">R$ ${formatarMoeda(f.valor)}</div></div></div><div style="display: flex; justify-content: space-between; border-top: 1px solid var(--glass-border); padding-top: 10px;">${!isPagoEsteMes ? `<button class="btn-small pay" onclick="pagarDespesaFixa(${f.id})">${t('markAsPaid')}</button>` : `<span style="color: var(--success); font-weight: bold; font-size: 0.85rem;">${t('paidThisMonth')}</span>`}<button class="btn-small del" onclick="deletarDespesaFixa(${f.id})">${t('delete')}</button></div></li>`;
+            });
+            parcelamentos.forEach(p => {
+                const isPagoEsteMes = idsPagosNoMes.includes(p.id); const faltam = parseInt(p.qtd) - parseInt(p.pagas);
+                if (faltam > 0 || isPagoEsteMes) { let parcelaAtualIdx = parseInt(p.pagas) + (isPagoEsteMes ? 0 : 1); if (parcelaAtualIdx > parseInt(p.qtd)) parcelaAtualIdx = parseInt(p.qtd); const valorParcelaAtual = calcValorParcela(p, parcelaAtualIdx); previsaoFixosCents += converterParaCentavos(valorParcelaAtual); listaFixos.innerHTML += `<li class="item-card glass" style="flex-direction: column; align-items: stretch; border-left: 3px solid var(--secondary);"><div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><div class="item-info"><h4>📱 ${p.desc}</h4><p style="color: var(--secondary); margin-top: 2px;">Venc. ${p.venc}</p><p style="margin-top: 2px;">${t('installmentOf', {n: parcelaAtualIdx, total: p.qtd})}</p><p style="margin-top: 2px;">${t('remainingInstallments', {n: faltam})}</p></div><div class="item-value-area"><div class="item-value">R$ ${formatarMoeda(valorParcelaAtual)} / parcela</div><div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;"><span style="font-weight: bold; color: ${isPagoEsteMes ? 'var(--success)' : 'var(--danger)'};">${isPagoEsteMes ? 'PAGO 🎉' : 'PENDENTE ⏳'}</span></div></div></div><div style="display: flex; justify-content: space-between; border-top: 1px solid var(--glass-border); padding-top: 10px;">${!isPagoEsteMes ? `<button class="btn-small pay" onclick="pagarParcela(${p.id})">${t('payInstallment')}</button>` : `<span style="color: var(--success); font-weight: bold; font-size: 0.85rem;">${t('paidThisMonth')}</span>`}</div></li>`; }
+            });
+            document.getElementById('fixos-total').innerText = formatarMoeda(converterDeCentavos(previsaoFixosCents));
+
+            const listaRec = document.getElementById('lista-recorrentes'); listaRec.innerHTML = '';
+            if(recorrencias.length === 0) { listaRec.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.85rem;">Nenhuma despesa recorrente cadastrada.</p>`; } else { recorrencias.forEach(r => { let statusCor = r.status === 'ativo' ? 'var(--success)' : 'var(--text-muted)'; listaRec.innerHTML += `<li class="item-card glass" style="flex-direction: column; align-items: stretch;"><div style="display: flex; justify-content: space-between;"><div class="item-info"><h4>🔄 ${r.nome}</h4><p>Todo dia ${r.vencimento} | ${t(r.categoria)||r.categoria}</p><p style="color: ${statusCor}; font-weight: bold; font-size: 0.75rem; margin-top: 4px;">${t(r.status)||r.status.toUpperCase()}</p></div><div class="item-value-area"><div class="item-value red">R$ ${formatarMoeda(r.valor)}</div></div></div><div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--glass-border); padding-top: 10px; margin-top: 10px; gap: 8px;"><button class="btn-small outline" onclick="toggleStatusRecorrente(${r.id})">${r.status === 'ativo' ? 'Pausar' : 'Ativar'}</button><button class="btn-small outline" onclick="abrirModalRecorrente(${r.id})">✏️ Editar</button><button class="btn-small del" onclick="deletarRecorrente(${r.id})">🗑️ Excluir</button></div></li>`; }); }
+
+            const listaInv = document.getElementById('lista-investimentos-container'); listaInv.innerHTML = '';
+            if (investimentos.length === 0) { listaInv.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:20px; font-size:0.9rem;">${t('noInvestments')}</p>`; } else { let gridHTML = '<ul class="investimentos-grid">'; investimentos.forEach(inv => { const calc = calcularRentabilidade(inv); const saldoDisp = calc.saldoComRendimento; const icone = inv.tipo === "Renda Fixa" ? "🛡️" : "📈"; let metaHTML = ''; if (inv.meta && parseFloat(inv.meta) > 0) { let pct = Math.min((saldoDisp / parseFloat(inv.meta)) * 100, 100); metaHTML = `<div class="inv-progresso-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%;"></div></div><div class="meta-texto">${t('percentOfGoal', {p: pct.toFixed(1)})}</div></div>`; } gridHTML += `<li class="inv-card" onclick="abrirDetalhesInvestimento(${inv.id})"><div class="icone">${icone}</div><div class="nome">${inv.nome}</div><div class="tipo">${t(inv.tipo === 'Renda Fixa' ? 'fixedIncome' : 'variableIncome')}</div><div class="valor">R$ ${saldoDisp.toFixed(2)}</div><div class="meta-texto">${t('invested')}: R$ ${calc.saldoBase.toFixed(2)}</div><div class="rendimento-texto">${t('yield')}: +R$ ${calc.rendimentoEstimado.toFixed(2)}</div>${metaHTML}</li>`; }); gridHTML += '</ul>'; listaInv.innerHTML = gridHTML; }
+            document.getElementById('inv-total').innerText = totalEstimadoInv.toFixed(2); document.getElementById('inv-fixa').innerText = totalFixa.toFixed(2); document.getElementById('inv-variavel').innerText = totalVar.toFixed(2);
+        
+            if(document.getElementById('tab-calendario').classList.contains('active')) renderizarCalendario();
+        }
+
+        // ==== LÓGICAS ORIGINAIS PRESERVADAS ====
+        function addParcelamento() { const desc = document.getElementById('parc-desc').value.trim(); const total = document.getElementById('parc-valor-total').value; const qtd = parseInt(document.getElementById('parc-qtd').value); const pagas = parseInt(document.getElementById('parc-pagas').value); const venc = document.getElementById('parc-venc').value; if(!desc || !total || isNaN(qtd) || !venc) return; parcelamentos.push({ id: Date.now(), desc: desc, total: parseFloat(total), qtd: qtd, pagas: isNaN(pagas) ? 0 : pagas, venc: venc }); document.getElementById('parc-desc').value=''; document.getElementById('parc-valor-total').value=''; document.getElementById('parc-qtd').value=''; document.getElementById('parc-pagas').value='0'; document.getElementById('parc-venc').value=''; salvarDados(); }
+        function pagarParcela(id) { const mesAtual = obterMesAtual(); if(!fixosPagos[mesAtual]) fixosPagos[mesAtual] = []; if(fixosPagos[mesAtual].includes(id)) return; let parc = parcelamentos.find(p => p.id === id); if (parc) { if (parseInt(parc.pagas) < parseInt(parc.qtd)) { parc.pagas = parseInt(parc.pagas) + 1; fixosPagos[mesAtual].push(id); salvarDados(); } } }
+        function deletarParcela(id) { if(confirm(t('delete')+"?")) { parcelamentos = parcelamentos.filter(p => p.id !== id); const meses = Object.keys(fixosPagos); meses.forEach(m => { fixosPagos[m] = fixosPagos[m].filter(pid => pid !== id); }); salvarDados(); } }
+        function toggleFormFixo() { const c=document.getElementById('form-fixo-container'); c.style.display = c.style.display==='none'||c.style.display===''?'block':'none'; }
+        function addDespesaFixa() { const n=document.getElementById('fixo-nome').value; const v=document.getElementById('fixo-valor').value; const d=document.getElementById('fixo-venc').value; if(n&&v&&d){ despesasFixas.push({id:Date.now(),nome:n,valor:parseFloat(v),vencimento:parseInt(d),categoria:document.getElementById('fixo-categoria').value}); toggleFormFixo(); salvarDados(); } }
+        function pagarDespesaFixa(id) { const mesAtual = obterMesAtual(); if(!fixosPagos[mesAtual]) fixosPagos[mesAtual] = []; if(!fixosPagos[mesAtual].includes(id)) { let parc = parcelamentos.find(p => p.id === id); if (parc) return pagarParcela(id); fixosPagos[mesAtual].push(id); salvarDados(); } }
+        function deletarDespesaFixa(id) { despesasFixas = despesasFixas.filter(f => f.id !== id); const meses = Object.keys(fixosPagos); meses.forEach(m => { fixosPagos[m] = fixosPagos[m].filter(pid => pid !== id); }); salvarDados(); }
+        function toggleRentFields(prefix) { const t = document.getElementById(`${prefix}-rent-tipo`).value; const box = document.getElementById(`${prefix}-rent-val-container`); const lbl = document.getElementById(`${prefix}-rent-label`); if (t==='nenhuma' || t==='poupanca') { box.style.display='none'; } else { box.style.display='block'; if(t==='cdi'||t==='selic') lbl.innerText = 'Percentual do índice (ex: 115)'; else if(t==='ipca') lbl.innerText = 'Taxa Fixa além do IPCA (ex: 6)'; else if(t==='fixa') lbl.innerText = 'Taxa Anual Fixa (ex: 10)'; } }
+        
+        function abrirModalInvestimento() { document.getElementById('investimento-modal').style.display = 'flex'; document.getElementById('inv-nome').value = ''; document.getElementById('inv-valor').value = ''; document.getElementById('inv-meta').value = ''; document.getElementById('inv-data').value = hojeInput(); document.getElementById('inv-rent-tipo').value = 'cdi'; document.getElementById('inv-rent-valor').value = '100'; toggleRentFields('inv'); }
+        function fecharModalInvestimento() { document.getElementById('investimento-modal').style.display = 'none'; }
+        function addInvestimento() { const n = document.getElementById('inv-nome').value.trim(); const val = parseFloat(document.getElementById('inv-valor').value); const tipo = document.getElementById('inv-tipo').value; const meta = parseFloat(document.getElementById('inv-meta').value) || 0; const rTipo = document.getElementById('inv-rent-tipo').value; const rVal = parseFloat(document.getElementById('inv-rent-valor').value) || 0; const dataInp = document.getElementById('inv-data').value; if (!n || isNaN(val) || val <= 0) return; const dInicio = dataInp ? parsePtBrDate(dataInp) : new Date(); investimentos.unshift({ id: Date.now(), nome: n, tipo: tipo, meta: meta, rentabilidadeTipo: rTipo, rentabilidadeValor: rVal, dataInicio: toPtBrString(dInicio), historico: [{ id: Date.now()+1, tipo: 'entrada', valor: val, data: toPtBrString(dInicio), desc: 'Investimento inicial' }] }); fecharModalInvestimento(); salvarDados(); }
+
+        function abrirDetalhesInvestimento(id) { idInvestimentoAtual = id; const inv = investimentos.find(i => i.id === id); if(!inv) return; const calc = calcularRentabilidade(inv); document.getElementById('det-icone').innerText = inv.tipo === "Renda Fixa" ? "🛡️" : "📈"; document.getElementById('det-nome').innerText = inv.nome; document.getElementById('det-tipo').innerText = t(inv.tipo === 'Renda Fixa' ? 'fixedIncome' : 'variableIncome'); document.getElementById('det-valor-estimado').innerText = `R$ ${calc.saldoComRendimento.toFixed(2)}`; document.getElementById('det-valor-investido').innerText = `R$ ${calc.saldoBase.toFixed(2)}`; document.getElementById('det-rendimento').innerText = `+R$ ${calc.rendimentoEstimado.toFixed(2)}`; document.getElementById('det-rent-str').innerText = formatarRentStr(inv); document.getElementById('det-data-inicio').innerText = inv.dataInicio || "--/--/----"; const metaCont = document.getElementById('det-meta-container'); if (inv.meta && inv.meta > 0) { metaCont.style.display = 'block'; document.getElementById('det-meta-valor').innerText = parseFloat(inv.meta).toFixed(2); const p = Math.min((calc.saldoComRendimento / inv.meta) * 100, 100); document.getElementById('det-meta-pct').innerText = `${p.toFixed(1)}%`; document.getElementById('det-meta-fill').style.width = `${p}%`; const falta = inv.meta - calc.saldoComRendimento; document.getElementById('det-meta-status').innerHTML = falta <= 0 ? `<span style="color:var(--success);">${t('targetReached')}</span>` : `<span style="color:var(--text-muted);">${t('missingForGoal')} R$ ${falta.toFixed(2)}</span>`; } else metaCont.style.display = 'none'; const hl = document.getElementById('det-historico-lista'); hl.innerHTML = ''; if (calc.rendimentoEstimado > 0) hl.innerHTML += `<div class="hist-item"><div style="flex:1"><div class="hist-item-desc">${t('accumulatedYield')}</div><div class="hist-item-data">Estimativa</div></div><div class="hist-item-valor" style="color:var(--success);">+ R$ ${calc.rendimentoEstimado.toFixed(2)}</div></div>`; const hRev = (inv.historico || []).slice().sort((a,b)=>parsePtBrDate(b.data)-parsePtBrDate(a.data)); hRev.forEach(h => { const isE = h.tipo==='entrada'; hl.innerHTML += `<div class="hist-item"><div style="flex:1"><div class="hist-item-desc">${h.desc}</div><div class="hist-item-data">${h.data}</div></div><div class="hist-item-valor" style="color:${isE?'var(--success)':'var(--danger)'};">${isE?'+':'-'} R$ ${parseFloat(h.valor).toFixed(2)}</div></div>`; }); document.getElementById('detalhes-investimento-modal').style.display = 'flex'; }
+        function fecharDetalhesInvestimento() { document.getElementById('detalhes-investimento-modal').style.display = 'none'; idInvestimentoAtual = null; }
+        function deletarInvestimentoAtual() { if(confirm(t('delete')+"?")) { investimentos = investimentos.filter(i => i.id !== idInvestimentoAtual); fecharDetalhesInvestimento(); salvarDados(); } }
+        function abrirModalMovInv(acao) { currentMovAction = acao; document.getElementById('mov-inv-titulo').innerText = acao==='add'?'+ Adicionar Aporte':'- Fazer Retirada'; document.getElementById('mov-inv-data').value = hojeInput(); document.getElementById('mov-inv-valor').value = ''; document.getElementById('mov-inv-obs').value = ''; document.getElementById('mov-inv-btn').style.background = acao==='add'?'linear-gradient(45deg, var(--primary), var(--secondary))':'var(--danger)'; document.getElementById('mov-inv-modal').style.display = 'flex'; }
+        function fecharModalMovInv() { document.getElementById('mov-inv-modal').style.display = 'none'; currentMovAction = null; }
+        function confirmarMovInv() { const inv = investimentos.find(i=>i.id===idInvestimentoAtual); if(!inv) return; const val = parseFloat(document.getElementById('mov-inv-valor').value); if(isNaN(val) || val<=0) return; if(currentMovAction === 'retirar') { const calc = calcularRentabilidade(inv); if (val > (calc.saldoComRendimento + 0.01)) return alert("Saldo estimado insuficiente!"); } const dtRaw = document.getElementById('mov-inv-data').value; const descRaw = document.getElementById('mov-inv-obs').value.trim(); const finalDesc = descRaw || (currentMovAction==='add'?'Aporte':'Retirada'); inv.historico.push({ id: Date.now(), tipo: currentMovAction==='add'?'entrada':'retirada', valor: val, data: dtRaw ? toPtBrString(parsePtBrDate(dtRaw)) : toPtBrString(new Date()), desc: finalDesc }); fecharModalMovInv(); salvarDados(); abrirDetalhesInvestimento(idInvestimentoAtual); }
+        function abrirModalEditInv() { const inv = investimentos.find(i=>i.id===idInvestimentoAtual); if(!inv) return; document.getElementById('edit-inv-nome').value = inv.nome; document.getElementById('edit-inv-tipo').value = inv.tipo; document.getElementById('edit-inv-meta').value = inv.meta || ''; document.getElementById('edit-inv-rent-tipo').value = inv.rentabilidadeTipo || 'nenhuma'; document.getElementById('edit-inv-rent-valor').value = inv.rentabilidadeValor || ''; toggleRentFields('edit-inv'); document.getElementById('edit-inv-modal').style.display = 'flex'; }
+        function fecharModalEditInv() { document.getElementById('edit-inv-modal').style.display = 'none'; }
+        function salvarEditInv() { const inv = investimentos.find(i=>i.id===idInvestimentoAtual); if(!inv) return; inv.nome = document.getElementById('edit-inv-nome').value.trim() || inv.nome; inv.tipo = document.getElementById('edit-inv-tipo').value; inv.meta = parseFloat(document.getElementById('edit-inv-meta').value) || 0; inv.rentabilidadeTipo = document.getElementById('edit-inv-rent-tipo').value; inv.rentabilidadeValor = parseFloat(document.getElementById('edit-inv-rent-valor').value) || 0; fecharModalEditInv(); salvarDados(); abrirDetalhesInvestimento(idInvestimentoAtual); }
+
+        function abrirModalGanhos() { idGanhoSendoEditado=null; document.getElementById('ganhos-modal').style.display='flex'; document.getElementById('ganho-desc').value=''; document.getElementById('ganho-valor').value=''; }
+        function fecharModalGanhos() { document.getElementById('ganhos-modal').style.display='none'; }
+        function prepararEdicaoGanho(id) { const m=obterMesAtual(); const g=(ganhosMensais[m]||[]).find(x=>x.id===id); if(g){ idGanhoSendoEditado=id; document.getElementById('ganhos-modal').style.display='flex'; document.getElementById('ganho-desc').value=g.desc; document.getElementById('ganho-valor').value=g.valor; } }
+        function salvarGanho() { const d = document.getElementById('ganho-desc').value||"Receita"; const v = parseFloat(document.getElementById('ganho-valor').value); if(!v||v<=0) return; const m = obterMesAtual(); if(!ganhosMensais[m]) ganhosMensais[m]=[]; if(idGanhoSendoEditado) { const g = ganhosMensais[m].find(x=>x.id===idGanhoSendoEditado); if(g){ g.desc=d; g.valor=v; } } else { ganhosMensais[m].push({id:Date.now(),desc:d,valor:v}); } fecharModalGanhos(); salvarDados(); }
+        function excluirGanho(id) { if(confirm(t('delete') + "?")) { for (let m in ganhosMensais) { ganhosMensais[m] = ganhosMensais[m].filter(g => g.id !== id); } salvarDados(); } }
+        function abrirModalGasto() { document.getElementById('gastos-modal').style.display='flex'; document.getElementById('gasto-desc').value=''; document.getElementById('gasto-valor').value=''; }
+        function fecharModalGasto() { document.getElementById('gastos-modal').style.display='none'; }
+        function addGasto() { const d = document.getElementById('gasto-desc').value; const v = document.getElementById('gasto-valor').value; if(!d||!v||v<=0) return; gastos.unshift({ id: Date.now(), desc: d, valor: parseFloat(v), metodo: document.getElementById('gasto-metodo').value, categoria: document.getElementById('gasto-categoria').value, data: toPtBrString(new Date()) }); fecharModalGasto(); salvarDados(); }
+        function deletarGasto(id) { if (confirm(t('delete') + "?")) { gastos = gastos.filter(g => g.id !== id); salvarDados(); } }
+
+        verificarLogin();
+    </script>
+</body>
+</html>
