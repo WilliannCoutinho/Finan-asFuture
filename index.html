@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ControlFine</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <style>
+        /* Variáveis de Cores - Estética Futurista Roxo/Azul */
+        :root {
+            --bg-color: #0b0c10;
+            --primary: #6a11cb;
+            --secondary: #2575fc;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-light: #ffffff;
+            --text-muted: #a0a5b1;
+            --danger: #ff4757;
+            --success: #2ed573;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(106, 17, 203, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(37, 117, 252, 0.15), transparent 25%);
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ----- TELA DE LOGIN / BLOQUEIO ----- */
+        #login-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-color);
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .login-card h1 {
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            letter-spacing: 1px;
+        }
+
+        .login-card p { color: var(--text-muted); margin-bottom: 30px; font-size: 0.95rem; }
+
+        .input-glass {
+            width: 100%; padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border); border-radius: 12px;
+            color: white; font-size: 1rem; outline: none;
+            transition: all 0.3s ease; margin-bottom: 20px;
+        }
+
+        .input-glass:focus {
+            border-color: var(--secondary); box-shadow: 0 0 15px rgba(37, 117, 252, 0.3);
+        }
+
+        .btn-gradient {
+            width: 100%; padding: 15px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border: none; border-radius: 12px; color: white;
+            font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(106, 17, 203, 0.4); transition: transform 0.2s;
+        }
+        .btn-gradient:active { transform: scale(0.98); }
+
+        /* ----- APP PRINCIPAL ----- */
+        #app-screen {
+            display: none;
+            padding: 20px 20px 100px 20px;
+            max-width: 600px; margin: 0 auto;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-top: 10px;
+        }
+
+        .profile-header {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .profile-img-mini {
+            width: 40px; height: 40px; border-radius: 50%;
+            object-fit: cover; border: 2px solid var(--primary);
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .greeting { font-size: 1.2rem; font-weight: 500; color: var(--text-muted); }
+        .greeting span { color: white; font-weight: bold; }
+
+        .balance-card {
+            padding: 25px; text-align: center; margin-bottom: 30px;
+            background: linear-gradient(135deg, rgba(106,17,203,0.2) 0%, rgba(37,117,252,0.2) 100%);
+        }
+        .balance-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-card h2 { font-size: 2.5rem; font-weight: bold; }
+
+        .form-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .form-group { flex: 1; display: flex; flex-direction: column; }
+        .form-group label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px; }
+
+        select.input-glass { appearance: none; background-color: rgba(255, 255, 255, 0.02); }
+        select.input-glass option { background-color: var(--bg-color); color: white; }
+
+        .section-title { font-size: 1.1rem; margin-bottom: 15px; margin-top: 10px; }
+        .item-list { list-style: none; }
+        
+        .item-card { padding: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .item-info h4 { font-size: 1rem; margin-bottom: 4px; }
+        .item-info p { font-size: 0.8rem; color: var(--text-muted); }
+        .item-value-area { text-align: right; }
+        .item-value { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; color: var(--text-light); }
+        .item-value.red { color: var(--danger); }
+        
+        .btn-small { background: rgba(255, 255, 255, 0.1); border: none; color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
+        .btn-small.pay { background: rgba(46, 213, 115, 0.2); color: var(--success); }
+        .btn-small.del { background: rgba(255, 71, 87, 0.2); color: var(--danger); margin-left: 5px;}
+
+        /* ----- BARRA INFERIOR ----- */
+        .bottom-nav {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px; display: flex; justify-content: space-around;
+            align-items: center; padding: 10px 15px; border-radius: 30px; z-index: 100;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); cursor: pointer; transition: 0.3s; padding: 10px; }
+        .nav-item svg { width: 24px; height: 24px; fill: currentColor; margin-bottom: 4px; transition: 0.3s; }
+        .nav-item span { font-size: 0.7rem; font-weight: 500; }
+        .nav-item.active { color: var(--secondary); }
+        .nav-item.active svg { transform: translateY(-2px); filter: drop-shadow(0 2px 5px rgba(37, 117, 252, 0.5)); }
+
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ----- ESTILOS DA ABA DE CONFIGURAÇÕES ----- */
+        .config-avatar-wrapper {
+            position: relative; width: 120px; height: 120px; margin: 0 auto 30px; cursor: pointer;
+        }
+        .config-avatar {
+            width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+            border: 3px solid var(--primary); background-color: rgba(255,255,255,0.05);
+            box-shadow: 0 4px 15px rgba(106, 17, 203, 0.4);
+        }
+        .edit-badge {
+            position: absolute; bottom: 0; right: 0; background: var(--secondary);
+            padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            border: 3px solid var(--bg-color);
+        }
+
+        /* Modal de Recorte (Crop) */
+        #crop-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 12, 16, 0.95); backdrop-filter: blur(10px); z-index: 2000;
+            flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+        }
+        .crop-container {
+            width: 100%; max-width: 400px; height: 50vh; background: #000; margin-bottom: 20px; border-radius: 12px; overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-card glass">
+            <h1>ControlFine</h1>
+            <p id="login-msg">Seu controle financeiro pessoal</p>
+            <input type="text" id="username-input" class="input-glass" placeholder="Como quer ser chamado?">
+            <input type="password" id="password-input" class="input-glass" placeholder="Digite sua senha">
+            <button class="btn-gradient" id="login-btn" onclick="processarLogin()">Entrar no App</button>
+        </div>
+    </div>
+
+    <div id="app-screen">
+        <header>
+            <div class="profile-header">
+                <img id="header-avatar" src="" class="profile-img-mini" alt="Perfil">
+                <div class="greeting">Olá, <span id="display-name"></span> 👋 <span id="display-mes" style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal; margin-left: 5px;"></span></div>
+            </div>
+            <button class="btn-small" onclick="bloquearApp()" style="background: transparent; color: var(--text-muted);">Bloquear</button>
+        </header>
+
+        <div id="painel-saldo" style="margin-bottom: 25px;">
+            <div class="balance-card glass" style="padding: 25px; text-align: center; margin-bottom: 12px; background: linear-gradient(135deg, rgba(106,17,203,0.25) 0%, rgba(37,117,252,0.25) 100%); border: 1px solid rgba(255,255,255,0.15);">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">Saldo Disponível</p>
+                <h2 style="font-size: 2.7rem; font-weight: bold; color: #ffffff;">R$ <span id="header-saldo-disponivel">0.00</span></h2>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                <div class="glass" style="flex: 1; padding: 15px; text-align: center;">
+                    <p style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Total de Gastos</p>
+                    <h3 style="font-size: 1.35rem; font-weight: bold; color: var(--danger);">R$ <span id="header-total-gastos">0.00</span></h3>
+                </div>
+                <div class="glass" style="flex: 1; padding: 15px; text-align: center; background: rgba(37, 117, 252, 0.15);">
+                    <p style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Total de Ganhos</p>
+                    <h3 style="font-size: 1.35rem; font-weight: bold; color: var(--success);">R$ <span id="header-total-ganhos">0.00</span></h3>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+                <button class="btn-small" onclick="abrirModalGanhos()" style="background: rgba(46, 213, 115, 0.15); color: var(--success); font-weight: bold; padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(46, 213, 115, 0.25);">+ Adicionar Ganhos</button>
+            </div>
+
+            <div id="lista-ganhos-container" style="margin-top: 15px; display: none;">
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Ganhos do Mês Atual</div>
+                <ul class="item-list" id="lista-ganhos"></ul>
+            </div>
+        </div>
+
+        <section id="tab-gastos" class="tab-content active">
+            <div class="glass" style="padding: 20px; margin-bottom: 20px;">
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label>Descrição</label>
+                        <input type="text" id="gasto-desc" class="input-glass" placeholder="Ex: Almoço">
+                    </div>
+                    <div class="form-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" id="gasto-valor" class="input-glass" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Método</label>
+                        <select id="gasto-metodo" class="input-glass">
+                            <option value="Pix">Pix</option>
+                            <option value="Débito">Débito</option>
+                            <option value="Crédito">Crédito</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select id="gasto-categoria" class="input-glass">
+                            <option value="Mercado">Mercado</option>
+                            <option value="Lazer">Lazer</option>
+                            <option value="Veículo">Veículo</option>
+                            <option value="Beleza">Beleza</option>
+                            <option value="Farmácia">Farmácia</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn-gradient" onclick="addGasto()">+ Adicionar Gasto</button>
+            </div>
+
+            <h3 class="section-title">Últimos Registros</h3>
+            <ul class="item-list" id="lista-gastos"></ul>
+        </section>
+
+        <section id="tab-parcelas" class="tab-content">
+            <div class="glass" style="padding: 20px; margin-bottom: 20px;">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>O que você parcelou?</label>
+                    <input type="text" id="parc-desc" class="input-glass" placeholder="Ex: iPhone, Financiamento">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Valor Total (R$)</label>
+                        <input type="number" id="parc-valor-total" class="input-glass" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Nº de Parcelas</label>
+                        <input type="number" id="parc-qtd" class="input-glass" placeholder="Ex: 12">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Parcelas Pagas</label>
+                        <input type="number" id="parc-pagas" class="input-glass" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Dia do Vencimento</label>
+                        <input type="number" id="parc-venc" class="input-glass" placeholder="Ex: 10">
+                    </div>
+                </div>
+                <button class="btn-gradient" onclick="addParcelamento()">+ Registrar Parcelamento</button>
+            </div>
+
+            <h3 class="section-title">Suas Dívidas</h3>
+            <ul class="item-list" id="lista-parcelas"></ul>
+        </section>
+
+        <section id="tab-notas" class="tab-content">
+            <div class="glass" style="padding: 25px; text-align: center; margin-bottom: 20px; background: linear-gradient(135deg, rgba(106,17,203,0.15) 0%, rgba(37,117,252,0.15) 100%);">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Despesas Fixas Mensais</p>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">Total mensal</div>
+                <h2>R$ <span id="fixos-total">0.00</span></h2>
+            </div>
+
+            <button class="btn-gradient" id="btn-toggle-fixo" onclick="toggleFormFixo()" style="margin-bottom: 20px;">+ Adicionar Despesa Fixa</button>
+
+            <div id="form-fixo-container" class="glass" style="padding: 20px; margin-bottom: 20px; display: none;">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Nome da despesa</label>
+                    <input type="text" id="fixo-nome" class="input-glass" placeholder="Ex: Aluguel, Internet, Academia">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Valor mensal (R$)</label>
+                        <input type="number" id="fixo-valor" class="input-glass" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Dia do vencimento</label>
+                        <input type="number" id="fixo-venc" class="input-glass" placeholder="Ex: 10">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Categoria</label>
+                    <select id="fixo-categoria" class="input-glass">
+                        <option value="Moradia">Moradia</option>
+                        <option value="Serviços">Serviços</option>
+                        <option value="Assinaturas">Assinaturas</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Educação">Educação</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <button class="btn-gradient" onclick="addDespesaFixa()">Adicionar Despesa Fixa</button>
+            </div>
+
+            <h3 class="section-title">Suas Despesas Fixas</h3>
+            <ul class="item-list" id="lista-fixos"></ul>
+        </section>
+
+        <section id="tab-config" class="tab-content">
+            <div class="glass" style="padding: 30px 20px; text-align: center;">
+                <h3 class="section-title" style="margin-top: 0; margin-bottom: 25px;">Seu Perfil</h3>
+                
+                <div class="config-avatar-wrapper" onclick="document.getElementById('input-foto').click()">
+                    <img id="config-avatar-preview" src="" class="config-avatar" alt="Foto de Perfil">
+                    <div class="edit-badge">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </div>
+                </div>
+                <input type="file" id="input-foto" accept="image/*" style="display: none;" onchange="abrirModalCrop(event)">
+
+                <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                    <label>Nome de Usuário</label>
+                    <input type="text" id="config-nome-input" class="input-glass">
+                </div>
+
+                <button class="btn-gradient" onclick="salvarPerfil()">Salvar Alterações</button>
+            </div>
+        </section>
+
+        <nav class="bottom-nav glass">
+            <div class="nav-item active" onclick="mudarAba('tab-gastos', this)">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                <span>Gastos</span>
+            </div>
+            <div class="nav-item" onclick="mudarAba('tab-parcelas', this)">
+                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                <span>Parcelas</span>
+            </div>
+            <div class="nav-item" onclick="mudarAba('tab-notas', this)">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                <span>Fixos</span>
+            </div>
+            <div class="nav-item" onclick="mudarAba('tab-config', this)">
+                <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+                <span>Config</span>
+            </div>
+        </nav>
+    </div>
+
+    <div id="crop-modal">
+        <h3 style="margin-bottom: 15px; color: white;">Ajuste sua Foto</h3>
+        <div class="crop-container">
+            <img id="image-to-crop" style="max-width: 100%; display: block;">
+        </div>
+        <div style="display: flex; gap: 15px; width: 100%; max-width: 400px;">
+            <button class="btn-gradient" style="background: var(--danger); flex: 1;" onclick="fecharModalCrop()">Cancelar</button>
+            <button class="btn-gradient" style="flex: 2;" onclick="aplicarCrop()">Cortar e Salvar</button>
+        </div>
+    </div>
+
+    <div id="ganhos-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 12, 16, 0.95); backdrop-filter: blur(10px); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+        <div class="glass" style="width: 100%; max-width: 400px; padding: 30px 20px; box-sizing: border-box; text-align: center;">
+            <h3 id="ganhos-modal-titulo" style="margin-bottom: 20px; color: white;">+ Registrar Receita</h3>
+            <div class="form-group" style="text-align: left; margin-bottom: 15px;">
+                <label>Descrição Opcional</label>
+                <input type="text" id="ganho-desc" class="input-glass" placeholder="Ex: Salário, Freelance, Extra">
+            </div>
+            <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+                <label>Valor Recebido (R$)</label>
+                <input type="number" id="ganho-valor" class="input-glass" placeholder="0.00" step="0.01">
+            </div>
+            <div style="display: flex; gap: 15px;">
+                <button class="btn-gradient" style="background: var(--danger); flex: 1;" onclick="fecharModalGanhos()">Cancelar</button>
+                <button class="btn-gradient" style="flex: 2;" id="ganhos-modal-btn" onclick="salvarGanho()">Adicionar Ganhos</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultAvatar = "data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path fill='%23a0a5b1' d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>";
+
+        // ==== SISTEMA DE LOGIN INTELIGENTE ====
+        function verificarLogin() {
+            const senhaSalva = localStorage.getItem('financas_password');
+            const autenticadoNestaSessao = sessionStorage.getItem('financas_authenticated');
+
+            if (!senhaSalva) {
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-screen').style.display = 'none';
+                document.getElementById('username-input').style.display = 'block';
+                document.getElementById('password-input').placeholder = 'Crie sua senha';
+                document.getElementById('login-msg').innerText = 'Crie sua conta para começar';
+                document.getElementById('login-btn').innerText = 'Criar Conta e Entrar';
+            } else if (!autenticadoNestaSessao) {
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-screen').style.display = 'none';
+                document.getElementById('username-input').style.display = 'none';
+                document.getElementById('password-input').placeholder = 'Digite sua senha';
+                
+                const usuario = localStorage.getItem('financas_user');
+                document.getElementById('login-msg').innerText = `Olá, ${usuario}! Digite sua senha para acessar:`;
+                document.getElementById('login-btn').innerText = 'Desbloquear';
+            } else {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'block';
+                carregarPerfil();
+                carregarDados();
+            }
+        }
+
+        function processarLogin() {
+            const senhaSalva = localStorage.getItem('financas_password');
+            const senhaDigitada = document.getElementById('password-input').value;
+
+            if (!senhaSalva) {
+                const nomeDigitado = document.getElementById('username-input').value.trim();
+                if (nomeDigitado === "") return alert("Por favor, digite seu nome.");
+                if (senhaDigitada === "") return alert("Por favor, escolha uma senha.");
+
+                localStorage.setItem('financas_user', nomeDigitado);
+                localStorage.setItem('financas_password', senhaDigitada);
+                sessionStorage.setItem('financas_authenticated', 'true');
+                
+                document.getElementById('password-input').value = '';
+                verificarLogin();
+            } else {
+                if (senhaDigitada === senhaSalva) {
+                    sessionStorage.setItem('financas_authenticated', 'true');
+                    document.getElementById('password-input').value = '';
+                    verificarLogin();
+                } else {
+                    alert("Senha incorreta! Tente novamente.");
+                }
+            }
+        }
+
+        function bloquearApp() {
+            sessionStorage.removeItem('financas_authenticated');
+            verificarLogin();
+        }
+
+        // ==== NAVEGAÇÃO LIQUID GLASS ====
+        function mudarAba(abaId, elementoClicado) {
+            document.querySelectorAll('.tab-content').forEach(aba => aba.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(abaId).classList.add('active');
+            elementoClicado.classList.add('active');
+
+            const painelSaldo = document.getElementById('painel-saldo');
+            if (abaId === 'tab-config') {
+                painelSaldo.style.display = 'none';
+            } else {
+                painelSaldo.style.display = 'block';
+            }
+        }
+
+        // ==== PERFIL E CONFIGURAÇÕES ====
+        let cropperInstance = null;
+
+        function carregarPerfil() {
+            const nome = localStorage.getItem('financas_user');
+            const foto = localStorage.getItem('financas_foto') || defaultAvatar;
+
+            document.getElementById('display-name').innerText = nome;
+            document.getElementById('header-avatar').src = foto;
+            document.getElementById('config-nome-input').value = nome;
+            document.getElementById('config-avatar-preview').src = foto;
+
+            const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            const d = new Date();
+            document.getElementById('display-mes').innerText = `| ${nomesMeses[d.getMonth()]} de ${d.getFullYear()}`;
+        }
+
+        function salvarPerfil() {
+            const novoNome = document.getElementById('config-nome-input').value.trim();
+            if (novoNome === "") return alert("O nome não pode ficar vazio!");
+            
+            localStorage.setItem('financas_user', novoNome);
+            carregarPerfil();
+            
+            const btn = document.querySelector('#tab-config .btn-gradient');
+            const textoOriginal = btn.innerText;
+            btn.innerText = "Salvo com sucesso!";
+            btn.style.background = "var(--success)";
+            setTimeout(() => {
+                btn.innerText = textoOriginal;
+                btn.style.background = "linear-gradient(45deg, var(--primary), var(--secondary))";
+            }, 2000);
+        }
+
+        // ==== LÓGICA DE RECORTE DE FOTO (CROP) ====
+        function abrirModalCrop(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const modal = document.getElementById('crop-modal');
+                const image = document.getElementById('image-to-crop');
+                image.src = e.target.result;
+                modal.style.display = 'flex';
+
+                if (cropperInstance) cropperInstance.destroy();
+                cropperInstance = new Cropper(image, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 0.9,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+            };
+            reader.readAsDataURL(file);
+            event.target.value = ''; 
+        }
+
+        function fecharModalCrop() {
+            document.getElementById('crop-modal').style.display = 'none';
+            if (cropperInstance) cropperInstance.destroy();
+        }
+
+        function aplicarCrop() {
+            if (!cropperInstance) return;
+
+            const canvas = cropperInstance.getCroppedCanvas({
+                width: 300, 
+                height: 300
+            });
+            const base64Image = canvas.toDataURL('image/jpeg', 0.7);
+
+            localStorage.setItem('financas_foto', base64Image);
+            carregarPerfil();
+            fecharModalCrop();
+        }
+
+        // ==== LÓGICA DE GERENCIAMENTO DE DADOS COM ESCOPO MENSAL ====
+        let gastos = [];
+        let parcelamentos = [];
+        let despesasFixas = [];
+        let ganhosMensais = {}; 
+        let fixosPagos = {};    
+        let idGanhoSendoEditado = null; // Variável de controle para edição isolada de receitas
+
+        function obterMesAtual() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function pertenceAoMesAtual(dataStr, mesAtualKey) {
+            if (!dataStr) return false;
+            if (dataStr.includes('/')) {
+                const partes = dataStr.split('/');
+                if (partes.length === 3) {
+                    const mes = partes[1].padStart(2, '0');
+                    const ano = partes[2];
+                    return `${ano}-${mes}` === mesAtualKey;
+                }
+            } else if (dataStr.includes('-')) {
+                return dataStr.startsWith(mesAtualKey);
+            }
+            return false;
+        }
+
+        function carregarDados() {
+            gastos = JSON.parse(localStorage.getItem('financas_gastos')) || [];
+            parcelamentos = JSON.parse(localStorage.getItem('financas_parcelas')) || [];
+            despesasFixas = JSON.parse(localStorage.getItem('financas_fixos')) || [];
+            ganhosMensais = JSON.parse(localStorage.getItem('financas_ganhos_mensal')) || {};
+            fixosPagos = JSON.parse(localStorage.getItem('financas_fixos_pagos')) || {};
+            
+            renderizarTela();
+        }
+
+        function salvarDados() {
+            localStorage.setItem('financas_gastos', JSON.stringify(gastos));
+            localStorage.setItem('financas_parcelas', JSON.stringify(parcelamentos));
+            localStorage.setItem('financas_fixos', JSON.stringify(despesasFixas));
+            localStorage.setItem('financas_ganhos_mensal', JSON.stringify(ganhosMensais));
+            localStorage.setItem('financas_fixos_pagos', JSON.stringify(fixosPagos));
+            renderizarTela();
+        }
+
+        function renderizarTela() {
+            const mesAtual = obterMesAtual();
+
+            // 1. Total de Ganhos Cadastrados no Mês Atual
+            const totalGanhos = (ganhosMensais[mesAtual] || []).reduce((acc, curr) => acc + parseFloat(curr.valor), 0);
+
+            // 2. Total de Gastos Comuns Efetivos do Mês Atual
+            const totalGastosComuns = gastos
+                .filter(g => pertenceAoMesAtual(g.data, mesAtual))
+                .reduce((acc, curr) => acc + parseFloat(curr.valor), 0);
+
+            // 3. Total de Despesas Fixas que foram MARCADAS COMO PAGAS no Mês Atual
+            const idsPagosNoMes = fixosPagos[mesAtual] || [];
+            const totalFixosPagos = despesasFixas
+                .filter(f => idsPagosNoMes.includes(f.id))
+                .reduce((acc, curr) => acc + parseFloat(curr.valor), 0);
+
+            const totalGastosEfetivos = totalGastosComuns + totalFixosPagos;
+            const saldoDisponivel = totalGanhos - totalGastosEfetivos;
+
+            // Atualiza os indicadores superiores
+            document.getElementById('header-saldo-disponivel').innerText = saldoDisponivel.toFixed(2);
+            document.getElementById('header-total-gastos').innerText = totalGastosEfetivos.toFixed(2);
+            document.getElementById('header-total-ganhos').innerText = totalGanhos.toFixed(2);
+
+            // RENDERIZAÇÃO MELHORADA: Lista de Ganhos Cadastrados no Mês Atual
+            const listaGanhosContainer = document.getElementById('lista-ganhos-container');
+            const listaGanhos = document.getElementById('lista-ganhos');
+            const ganhosDoMes = ganhosMensais[mesAtual] || [];
+
+            if (ganhosDoMes.length > 0) {
+                listaGanhosContainer.style.display = 'block';
+                listaGanhos.innerHTML = '';
+                ganhosDoMes.forEach(g => {
+                    listaGanhos.innerHTML += `
+                        <li class="item-card glass" style="margin-bottom: 8px; padding: 12px 15px;">
+                            <div class="item-info">
+                                <h4 style="color: var(--success);">💰 ${g.desc}</h4>
+                                <p>Receita cadastrada</p>
+                            </div>
+                            <div class="item-value-area">
+                                <div class="item-value" style="color: var(--success); margin-bottom: 5px;">R$ ${parseFloat(g.valor).toFixed(2)}</div>
+                                <button class="btn-small" style="background: rgba(37, 117, 252, 0.15); color: var(--secondary);" onclick="prepararEdicaoGanho(${g.id})">Editar</button>
+                                <button class="btn-small del" onclick="excluirGanho(${g.id})">Excluir</button>
+                            </div>
+                        </li>
+                    `;
+                });
+            } else {
+                listaGanhosContainer.style.display = 'none';
+                listaGanhos.innerHTML = '';
+            }
+
+            // Renderiza Gastos Comuns (Aba 1)
+            const listaGastos = document.getElementById('lista-gastos');
+            listaGastos.innerHTML = '';
+            gastos.forEach(g => {
+                listaGastos.innerHTML += `
+                    <li class="item-card glass">
+                        <div class="item-info">
+                            <h4>${g.desc}</h4>
+                            <p>${g.categoria} | ${g.metodo} | ${g.data}</p>
+                        </div>
+                        <div class="item-value-area">
+                            <div class="item-value red">R$ ${parseFloat(g.valor).toFixed(2)}</div>
+                            <button class="btn-small del" onclick="deletarGasto(${g.id})">Apagar</button>
+                        </div>
+                    </li>
+                `;
+            });
+
+            // Renderiza Parcelamentos (Aba 2)
+            const listaParcelas = document.getElementById('lista-parcelas');
+            listaParcelas.innerHTML = '';
+            parcelamentos.forEach(p => {
+                const valorParcela = p.total / p.qtd;
+                const faltam = p.qtd - p.pagas;
+                const saldoDevedor = faltam * valorParcela;
+
+                listaParcelas.innerHTML += `
+                    <li class="item-card glass" style="flex-direction: column; align-items: stretch;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <div class="item-info">
+                                <h4>${p.desc}</h4>
+                                <p style="color: var(--secondary);">Vence dia ${p.venc}</p>
+                                <p>Progresso: ${p.pagas}/${p.qtd}</p>
+                            </div>
+                            <div class="item-value-area">
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Resta Pagar</div>
+                                <div class="item-value">R$ ${saldoDevedor.toFixed(2)}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Total: R$ ${parseFloat(p.total).toFixed(2)}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--glass-border); padding-top: 10px;">
+                            ${faltam > 0 ? `<button class="btn-small pay" onclick="pagarParcela(${p.id})">+ Pagar Parcela</button>` : `<span style="color: var(--success); font-weight: bold; font-size: 0.9rem;">QUITADO! 🎉</span>`}
+                            <button class="btn-small del" onclick="deletarParcela(${p.id})">Apagar</button>
+                        </div>
+                    </li>
+                `;
+            });
+
+            // Renderiza e Calcula a Projeção Fixo Mensal (Aba 3)
+            const totalTodosFixos = despesasFixas.reduce((acc, curr) => acc + parseFloat(curr.valor), 0);
+            document.getElementById('fixos-total').innerText = totalTodosFixos.toFixed(2);
+
+            const listaFixos = document.getElementById('lista-fixos');
+            listaFixos.innerHTML = '';
+
+            const categoriaEmojis = {
+                "Moradia": "🏠", "Serviços": "⚡", "Assinaturas": "📺",
+                "Transporte": "🚗", "Educação": "📚", "Saúde": "🩺", "Outros": "📦"
+            };
+
+            despesasFixas.forEach(f => {
+                const emoji = categoriaEmojis[f.categoria] || "💰";
+                const isPagoEsteMes = idsPagosNoMes.includes(f.id);
+
+                listaFixos.innerHTML += `
+                    <li class="item-card glass" style="flex-direction: column; align-items: stretch;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <div class="item-info">
+                                <h4>${emoji} ${f.nome}</h4>
+                                <p>${f.categoria} | Vence dia ${f.vencimento}</p>
+                                <p>Mês Vigente: <span style="font-weight: bold; color: ${isPagoEsteMes ? 'var(--success)' : 'var(--danger)'};">${isPagoEsteMes ? 'PAGO 🎉' : 'PENDENTE ⏳'}</span></p>
+                            </div>
+                            <div class="item-value-area">
+                                <div class="item-value">R$ ${parseFloat(f.valor).toFixed(2)}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--glass-border); padding-top: 10px;">
+                            ${!isPagoEsteMes ? `<button class="btn-small pay" onclick="pagarDespesaFixa(${f.id})">Marcar como Pago</button>` : `<span style="color: var(--success); font-weight: bold; font-size: 0.85rem;">✓ Pago este mês</span>`}
+                            <button class="btn-small del" onclick="deletarDespesaFixa(${f.id})">Excluir</button>
+                        </div>
+                    </li>
+                `;
+            });
+        }
+
+        // ==== LÓGICA DO MODAL DE GANHOS (ADICIONAR / EDITAR / EXCLUIR) ====
+        function abrirModalGanhos() {
+            idGanhoSendoEditado = null; // Reseta para modo de inserção
+            document.getElementById('ganhos-modal').style.display = 'flex';
+            document.getElementById('ganhos-modal-titulo').innerText = '+ Registrar Receita';
+            document.getElementById('ganhos-modal-btn').innerText = 'Adicionar Ganhos';
+            document.getElementById('ganho-desc').value = '';
+            document.getElementById('ganho-valor').value = '';
+        }
+
+        function fecharModalGanhos() {
+            document.getElementById('ganhos-modal').style.display = 'none';
+            idGanhoSendoEditado = null;
+        }
+
+        function prepararEdicaoGanho(id) {
+            const mesAtual = obterMesAtual();
+            const ganho = (ganhosMensais[mesAtual] || []).find(g => g.id === id);
+            if (!ganho) return;
+
+            idGanhoSendoEditado = id; // Define o ID em edição
+            document.getElementById('ganhos-modal').style.display = 'flex';
+            document.getElementById('ganhos-modal-titulo').innerText = '📝 Editar Receita';
+            document.getElementById('ganhos-modal-btn').innerText = 'Salvar Alterações';
+            document.getElementById('ganho-desc').value = ganho.desc;
+            document.getElementById('ganho-valor').value = ganho.valor;
+        }
+
+        function salvarGanho() {
+            const desc = document.getElementById('ganho-desc').value.trim() || "Ganho Mensal";
+            const valor = document.getElementById('ganho-valor').value;
+
+            if(!valor || parseFloat(valor) <= 0) return alert("Por favor, digite um valor válido!");
+
+            const mesAtual = obterMesAtual();
+            if(!ganhosMensais[mesAtual]) ganhosMensais[mesAtual] = [];
+
+            if (idGanhoSendoEditado !== null) {
+                // Executa a alteração do registro existente
+                const ganho = ganhosMensais[mesAtual].find(g => g.id === idGanhoSendoEditado);
+                if (ganho) {
+                    ganho.desc = desc;
+                    ganho.valor = parseFloat(valor);
+                }
+            } else {
+                // Criação normal de uma nova receita
+                ganhosMensais[mesAtual].push({
+                    id: Date.now(),
+                    desc: desc,
+                    valor: parseFloat(valor)
+                });
+            }
+
+            fecharModalGanhos();
+            salvarDados();
+        }
+
+        function excluirGanho(id) {
+            if (!confirm("Tem certeza que deseja excluir esta receita?")) return;
+            
+            const mesAtual = obterMesAtual();
+            if (ganhosMensais[mesAtual]) {
+                ganhosMensais[mesAtual] = ganhosMensais[mesAtual].filter(g => g.id !== id);
+                salvarDados();
+            }
+        }
+
+        // Funções de Ação - Gastos Diários
+        function addGasto() {
+            const desc = document.getElementById('gasto-desc').value;
+            const valor = document.getElementById('gasto-valor').value;
+            const metodo = document.getElementById('gasto-metodo').value;
+            const categoria = document.getElementById('gasto-categoria').value;
+
+            if(!desc || !valor) return alert("Preencha descrição e valor!");
+
+            gastos.unshift({ id: Date.now(), desc, valor, metodo, categoria, data: new Date().toLocaleDateString() });
+            
+            document.getElementById('gasto-desc').value = '';
+            document.getElementById('gasto-valor').value = '';
+            salvarDados();
+        }
+
+        function deletarGasto(id) {
+            gastos = gastos.filter(g => g.id !== id);
+            salvarDados();
+        }
+
+        // Funções de Ação - Parcelas
+        function addParcelamento() {
+            const desc = document.getElementById('parc-desc').value;
+            const total = document.getElementById('parc-valor-total').value;
+            const qtd = parseInt(document.getElementById('parc-qtd').value);
+            const pagas = parseInt(document.getElementById('parc-pagas').value);
+            const venc = document.getElementById('parc-venc').value;
+
+            if(!desc || !total || !qtd || !venc) return alert("Preencha todos os campos corretamente!");
+
+            parcelamentos.push({ id: Date.now(), desc, total, qtd, pagas, venc });
+            
+            document.getElementById('parc-desc').value = '';
+            document.getElementById('parc-valor-total').value = '';
+            document.getElementById('parc-qtd').value = '';
+            document.getElementById('parc-pagas').value = '0';
+            document.getElementById('parc-venc').value = '';
+            
+            salvarDados();
+        }
+
+        function pagarParcela(id) {
+            let parc = parcelamentos.find(p => p.id === id);
+            if(parc && parc.pagas < parc.qtd) {
+                parc.pagas += 1;
+                salvarDados();
+            }
+        }
+
+        function deletarParcela(id) {
+            parcelamentos = parcelamentos.filter(p => p.id !== id);
+            salvarDados();
+        }
+
+        // Funções de Ação - Despesas Fixas
+        function toggleFormFixo() {
+            const container = document.getElementById('form-fixo-container');
+            const btn = document.getElementById('btn-toggle-fixo');
+            
+            if (container.style.display === 'none' || container.style.display === '') {
+                container.style.display = 'block';
+                btn.innerText = 'Fechar Formulário';
+                btn.style.background = 'rgba(255, 255, 255, 0.1)';
+            } else {
+                container.style.display = 'none';
+                btn.innerText = '+ Adicionar Despesa Fixa';
+                btn.style.background = 'linear-gradient(45deg, var(--primary), var(--secondary))';
+            }
+        }
+
+        function addDespesaFixa() {
+            const nome = document.getElementById('fixo-nome').value.trim();
+            const valor = document.getElementById('fixo-valor').value;
+            const vencimento = document.getElementById('fixo-venc').value;
+            const categoria = document.getElementById('fixo-categoria').value;
+
+            if(!nome || !valor || !vencimento) return alert("Preencha todos os campos da despesa fixa!");
+
+            despesasFixas.push({
+                id: Date.now(),
+                nome: nome,
+                valor: parseFloat(valor),
+                vencimento: parseInt(vencimento),
+                categoria: categoria
+            });
+
+            document.getElementById('fixo-nome').value = '';
+            document.getElementById('fixo-valor').value = '';
+            document.getElementById('fixo-venc').value = '';
+
+            toggleFormFixo();
+            salvarDados();
+        }
+
+        function pagarDespesaFixa(id) {
+            const mesAtual = obterMesAtual();
+            if(!fixosPagos[mesAtual]) fixosPagos[mesAtual] = [];
+
+            if(!fixosPagos[mesAtual].includes(id)) {
+                fixosPagos[mesAtual].push(id);
+                salvarDados();
+            }
+        }
+
+        function deletarDespesaFixa(id) {
+            despesasFixas = despesasFixas.filter(f => f.id !== id);
+            const meses = Object.keys(fixosPagos);
+            meses.forEach(m => {
+                fixosPagos[m] = fixosPagos[m].filter(pId => pId !== id);
+            });
+            salvarDados();
+        }
+
+        // Iniciar Verificação do Estado do Login ao rodar o script
+        verificarLogin();
+
+    </script>
+</body>
+</html>
